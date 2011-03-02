@@ -11,6 +11,7 @@ Table of Contents
 * Introduction
 * Compiling the Compiler
 * The Language
+* The Wiki
 * The License
 * Acknowledgements
 
@@ -40,7 +41,12 @@ To clean up binaries before compiling if you really need to, you can go:
 The Language
 ------------
 
-The language description can be read at the [wiki pages](https://github.com/Bananattack/nel-d/wiki) on this project's GitHub repository.
+The language description can be read at the [wiki pages](https://github.com/Bananattack/nel-d/wiki) on this project's GitHub repository. See "The Wiki" for more information about what can be found on the wiki.
+
+The Wiki
+--------
+
+The wiki pages can be found at: <https://github.com/Bananattack/nel-d/wiki>. These provide an online version of the manual, with lengthier descriptions of the various aspects of nel, the language syntax that it recognizes, and other fun.
 
 The License
 -----------
