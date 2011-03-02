@@ -18,9 +18,9 @@ Table of Contents
 Introduction
 ------------
 
-nel is a project I started to make development for the NES "easier", by diverting my time from making a game to working on a compiler for the 6502. It aims to remove a lot of unnecessary formatting requirements on your source code, and to unify certain mnemonics in the "official" 6502 assembly, with a simplified syntax. It is a 3-pass compiler that generates machine code in `.nes`/iNES format at the end.
+nel is a project I started to make development for the NES "easier", by diverting my time from making a game to working on a compiler for the 6502. It aims to remove a lot of unnecessary formatting requirements on your source code, and to unify certain mnemonics in the "official" 6502 assembly, with a simplified syntax. It is a 3-pass compiler that generates machine code in `.nes` / iNES format at the end.
 
-The language is not meant to provide many truly high-level concepts. It aims to only to aid in the development of low-level coding, and to that effect, has no "standard library", only built-in commands and language constructs that map closely (often exactly) to single machine code instructions (with the exception of `add`/`sub`/`neg`/`not` commands, which become multiple instructions).
+The language is not meant to provide many truly high-level concepts. It aims to only to aid in the development of low-level coding, and to that effect, has no "standard library", only built-in commands and language constructs that map closely (often exactly) to single machine code instructions (with the exception of `add` / `sub` / `neg` / `not` commands, which become multiple instructions).
 
 Although I originally made this for my own interest, feel free to use it for your NES homebrew projects.
 
