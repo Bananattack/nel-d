@@ -1,8 +1,10 @@
 
-nel (D version) - by Andrew Crowell / Overkill
-==============================================
+nel (D version)
+===============
+by Andrew Crowell / Overkill
+----------------------------
 
-A low-level language for making NES games.
+A low-level language for making homebrew NES games.
 
 
 Table of Contents
