@@ -29,16 +29,7 @@ import nel.ast.expression;
 class HeaderStatement : Statement
 {
     private:
-        static bool[string] recognizedSettings;
-        static this()
-        {
-            recognizedSettings["mapper"] = true;
-            recognizedSettings["prg"] = true;
-            recognizedSettings["chr"] = true;
-            recognizedSettings["mirroring"] = true;
-            recognizedSettings["battery"] = true;
-            recognizedSettings["fourscreen"] = true;
-        }
+        bool[string] recognizedSettings;
         
         HeaderSegment[string] assigned;
         bool[string] accepted;
@@ -48,6 +39,13 @@ class HeaderStatement : Statement
         {
             super(StatementType.HEADER, position);
             this.segments = segments;
+            
+            recognizedSettings["mapper"] = true;
+            recognizedSettings["prg"] = true;
+            recognizedSettings["chr"] = true;
+            recognizedSettings["mirroring"] = true;
+            recognizedSettings["battery"] = true;
+            recognizedSettings["fourscreen"] = true;
         }
         
         HeaderSegment[] getSegments()
