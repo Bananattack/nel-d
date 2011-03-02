@@ -40,7 +40,7 @@ To clean up binaries before compiling if you really need to, you can go:
 The Language
 ------------
 
-The language description can be read at the wiki where this project is kept on GitHub: https://github.com/Bananattack/nel-d/wiki
+The language description can be read at the [wiki pages](https://github.com/Bananattack/nel-d/wiki) on this project's GitHub repository.
 
 The License
 -----------
