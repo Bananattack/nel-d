@@ -13,11 +13,11 @@ A low-level language for making NES games.
 
 Table of Contents
 -----------------
-    * Introduction
-    * Compiling the Compiler
-    * The Language
-    * The License
-    * Acknowledgements
+* Introduction
+* Compiling the Compiler
+* The Language
+* The License
+* Acknowledgements
 
 
 Introduction
@@ -75,9 +75,9 @@ Acknowledgements
 
 In no particular order:
 
-    * [6502 Introduction by Andrew Jacobs](http://www.obelisk.demon.co.uk/6502/) for extremely handy instruction charts and breakdown of how the addressing modes and other stuff works.
-    * [6502.org](http://www.6502.org/) for various ideas, and some nice articles.
-    * [MagicKit](http://www.magicengine.com/mkit/) for NESASM, and eventually inspiration to not use NESASM and make my own language instead.
-    * [NESdev](http://nesdev.parodius.com/) for many useful reads, ranging from old documents, to wiki pages, to interesting forum posts. This helped with NES development ideas, with learning the iNES format, and learning various 6502 assembly.
-    * [NintendoAge](http://www.nintendoage.com/) for their [excellent tutorials](http://nintendoage.com/faq/NA/nerdy_nights_out.html) on learning to program for the NES.
-    * Possibly more.
+* [6502 Introduction by Andrew Jacobs](http://www.obelisk.demon.co.uk/6502/) for extremely handy instruction charts and breakdown of how the addressing modes and other stuff works.
+* [6502.org](http://www.6502.org/) for various ideas, and some nice articles.
+* [MagicKit](http://www.magicengine.com/mkit/) for NESASM, and eventually inspiration to not use NESASM and make my own language instead.
+* [NESdev](http://nesdev.parodius.com/) for many useful reads, ranging from old documents, to wiki pages, to interesting forum posts. This helped with NES development ideas, with learning the iNES format, and learning various 6502 assembly.
+* [NintendoAge](http://www.nintendoage.com/) for their [excellent tutorials](http://nintendoage.com/faq/NA/nerdy_nights_out.html) on learning to program for the NES.
+* Possibly more.
