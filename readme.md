@@ -1,14 +1,8 @@
------------------------------------------------
 
-nel (D version)
+nel (D version) - by Andrew Crowell / Overkill
+==============================================
 
-by Andrew Crowell / Overkill
-
------------------------------------------------
-
-A low-level language for making NES games.  
-
------------------------------------------------
+A low-level language for making NES games.
 
 
 Table of Contents
@@ -23,15 +17,17 @@ Table of Contents
 Introduction
 ------------
 
-nel is a project I started to make development for the NES "easier", by diverting my time from making a game to working on a compiler for the 6502. It aims to remove a lot of unnecessary formatting requirements on your source code, and to unify certain mnemonics in the "official" 6502 assembly, with a simplified syntax. It is a 3-pass compiler that generates machine code in .nes/iNES format at the end.
+nel is a project I started to make development for the NES "easier", by diverting my time from making a game to working on a compiler for the 6502. It aims to remove a lot of unnecessary formatting requirements on your source code, and to unify certain mnemonics in the "official" 6502 assembly, with a simplified syntax. It is a 3-pass compiler that generates machine code in `.nes`/iNES format at the end.
 
-The language is not meant to provide many truly high-level concepts. It aims to only to aid in the development of low-level coding, and to that effect, has no standard library, only built-in commands and language constructs that map closely (often exactly) to single machine code instructions (with the exception of add/sub/neg/not commands, which become multiple instructions).
+The language is not meant to provide many truly high-level concepts. It aims to only to aid in the development of low-level coding, and to that effect, has no "standard library", only built-in commands and language constructs that map closely (often exactly) to single machine code instructions (with the exception of `add`/`sub`/`neg`/`not` commands, which become multiple instructions).
+
+Although I originally made this for my own interest, feel free to use it for your NES homebrew projects.
 
 
 Compiling the Compiler
 ----------------------
 
-To compile nel, you need to have Digital Mars D2 (dmd version 2) installed. D1 will not work, and likely gdc won't either. Then just run the following command:
+To compile nel, you need to have Digital Mars D2 (`dmd` version 2) installed. D1 will not work, and likely gdc won't either. Once you have `dmd` version 2 installed, you can just run the following command:
 
     dmd src/nel/*.d src/nel/ast/*.d src/nel/parse/*.d -Isrc -ofnel
 
