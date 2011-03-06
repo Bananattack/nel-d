@@ -1,0 +1,24 @@
+Release Guidelines
+------------------
+
+These are a few notes of what should probably go into a precompiled release:
+
+* nel executable in the base folder.
+* release/readme.txt as readme.txt in the base folder.
+* tools/ folder.
+* tests/ folder.
+
+Oh yeah, release/readme.txt and readme.md have different purposes:
+
+* readme.md is for the Github description of the repository, aimed at people who
+  want to develop the nel compiler's source. The formatting is markdown.
+* release/readme.txt is meant to be a summary of the program itself, and is
+  targetted more at an end-user assembly programmer. The formatting is meant
+  to look good in plain-text, not targetted at a particular markup style,
+  because it's only meant to be rendered as plain-text.
+  
+  It should render fine in 80 character displays without word-wrap.
+
+That's probably good for now.
+
+-- Overkill
