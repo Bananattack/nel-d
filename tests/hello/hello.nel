@@ -1,0 +1,112 @@
+ines:
+    mapper = 0,
+    prg = 1,
+    chr = 1
+
+ram 0x00:
+    var t0, t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15: byte
+    
+rom bank 0, 0xC000:
+    include 'hardware.nel'
+
+    def load_palette: begin
+        a: get #(ppu.PALETTE_BASE >> 8), put @ppu.address, get #(ppu.PALETTE_BASE & 0xFF), put @ppu.address
+        x: get #0
+        def loop: begin
+            a: get @palette[x], put @ppu.data
+            x: inc, cmp #(ppu.PALETTE_SIZE * ppu.PALETTE_TOTAL)
+            goto loop when not zero
+        end
+        return
+    end
+    
+    def print_text: begin
+        let START_X = 10
+        let START_Y = 13
+        let TILE_ADDRESS = ppu.NAMETABLE_BASE + (START_Y * 32 + START_X)
+        
+        // Read PPU status to reset its state.
+        a: get @ppu.status
+        // Now setup the PPU for copying tiles.
+        a: get #(TILE_ADDRESS >> 8), put @ppu.address, get #(TILE_ADDRESS & 0xFF), put @ppu.address
+        
+        x: get #0
+        def loop: begin
+            a: get @message[x]
+            goto done when zero
+            x: inc
+            a: put @ppu.data
+            goto loop
+        end
+        def done:
+            return
+    end
+
+    def main: begin
+        // Set necessary processor flags.
+        p: unset decimal, set interrupt
+        // Prepare stack.
+        x: get #0xFF, put s
+        
+        // Turn off rendering.
+        x: get #0, put @ppu.ctrl, put @ppu.mask
+        
+        // Wait for the PPU to be ready to use, which takes 2 vertical blanks.
+        def wait_for_video_ready: begin
+            def wait_for_vbl: begin
+                a: bit @ppu.status
+                goto wait_for_vbl when not negative
+            end
+            x: inc, cmp #2
+            goto wait_for_video_ready when not zero
+        end
+        
+        call load_palette
+        call print_text
+        
+        // We're finally ready to show the screen!
+        a: get #ppu.CTRL_NMI, put @ppu.ctrl
+        a: get #(ppu.MASK_LEFTMOST_BG | ppu.MASK_RENDER_BG), put @ppu.mask
+
+        def loop: begin
+            goto loop
+        end
+    end
+    
+    def draw: begin
+        a: push, get x, push, get y, push
+        a: get @ppu.status
+        a: get #0, put @ppu.scroll, put @ppu.scroll
+        a: pull, put y, pull, put x, pull
+        resume
+    end
+    
+    def scan: begin
+        a: push, get x, push, get y, push
+        a: pull, put y, pull, put x, pull
+        resume        
+    end
+
+rom bank 1, 0xE000:
+    def message:
+        // A null-terminated message.
+        byte: "HELLO  WORLD", 0
+    
+    def palette:
+        // Tiles
+        byte: 0x0F, 0x00, 0x10, 0x30
+        byte: 0x0F, 0x00, 0x10, 0x30
+        byte: 0x0F, 0x00, 0x10, 0x30
+        byte: 0x0F, 0x00, 0x10, 0x30
+        // Sprites
+        byte: 0x0F, 0x00, 0x10, 0x30
+        byte: 0x0F, 0x00, 0x10, 0x30
+        byte: 0x0F, 0x00, 0x10, 0x30
+        byte: 0x0F, 0x00, 0x10, 0x30
+
+rom 0xFFFA:
+    word: draw, main, scan
+    
+rom bank 2, 0x0000:
+    embed 'hello_tiles.chr'
+    embed 'hello_tiles.chr' // Pad the other 4K with the same image.

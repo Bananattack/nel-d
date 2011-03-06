@@ -140,6 +140,12 @@ void main(string[] arguments)
         log("error: input file '" ~ input ~ "' does not exist.");
         return;
     }
+    
+    if(std.file.isdir(output))
+    {
+        log("error: output '" ~ output ~ "' is a directory.");
+        return;
+    }
 
     Scanner scanner = new Scanner(std.stdio.File(input, "rb"), input);
     Parser parser = new Parser(scanner);
@@ -168,7 +174,7 @@ void main(string[] arguments)
         }
         catch(Exception e)
         {
-            log("error: input '" ~ input ~ "' is a directory.");
+            log("error: output '" ~ output ~ "' could not be written.");
             fatalError();
         }
         log("Wrote to '" ~ output ~ "'.");

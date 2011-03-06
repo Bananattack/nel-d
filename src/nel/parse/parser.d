@@ -21,6 +21,7 @@ module nel.parse.parser;
 // THE SOFTWARE.
 
 static import std.conv;
+static import std.path;
 static import std.stdio;
 static import std.string;
 
@@ -284,6 +285,8 @@ class Parser
             return;
         }
         
+        // Make the filename relative to its current source.
+        filename = std.path.dirname(scanner.getPosition().getFile().getFilename()) ~ std.path.sep ~ filename;        
         
         if(includeStack.length > INCLUDE_MAX)
         {
@@ -301,7 +304,8 @@ class Parser
         
         // Push old scanner onto stack.
         includeStack ~= scanner;
-        // Swap scanner.
+        
+        // Open the new file.
         std.stdio.File file;
         try
         {
@@ -313,6 +317,7 @@ class Parser
         }
         if(file.isOpen())
         {
+            // Swap scanner.
             scanner = new Scanner(file, filename);
         }
         else
@@ -333,6 +338,9 @@ class Parser
         {
             string filename = text;
             nextToken();
+            
+            // Make the filename relative to its current source.
+            filename = std.path.dirname(scanner.getPosition().getFile().getFilename()) ~ std.path.sep ~ filename;   
             return new EmbedStatement(filename, position);
         }
         else

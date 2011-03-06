@@ -20,6 +20,7 @@ module nel.ast.embed_statement;
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
 
+static import std.file;
 static import std.stdio;
 
 import nel.report;
@@ -52,6 +53,20 @@ class EmbedStatement : Statement
         
         void validate()
         {   
+            if(std.file.exists(filename))
+            {
+                if(std.file.isdir(filename))
+                {
+                    error("attempt to embed directory '" ~ filename ~ "'", getPosition(), true);
+                    return;
+                }
+            }
+            else
+            {
+                error("could not embed file '" ~ filename ~ "'", getPosition(), true);
+                return;
+            }
+        
             try
             {
                 std.stdio.File file = std.stdio.File(filename, "rb");

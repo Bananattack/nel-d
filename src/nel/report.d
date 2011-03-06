@@ -40,6 +40,11 @@ class SourceFile
             this.includePoint = includePoint;
         }
     
+        string getFilename()
+        {
+            return filename;
+        }
+    
         string toString(bool verbose = false)
         {
             return filename ~ (verbose && includePoint !is null ? " (included at " ~ includePoint.toString() ~ ")" : "");
