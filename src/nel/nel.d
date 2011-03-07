@@ -32,7 +32,7 @@ import nel.parse.parser;
 import nel.parse.scanner;
 
 public immutable string PROGRAM_NAME = "nel";
-public immutable string VERSION_TEXT = "0.1 (alpha build)";
+public immutable string VERSION_TEXT = "0.1.1 (alpha build)";
 
 private enum ArgumentState
 {
@@ -126,7 +126,6 @@ void main(string[] arguments)
     }
     
 
-    
     if(std.file.exists(input))
     {
         if(std.file.isdir(input))
@@ -141,7 +140,7 @@ void main(string[] arguments)
         return;
     }
     
-    if(std.file.isdir(output))
+    if(std.file.exists(output) && std.file.isdir(output))
     {
         log("error: output '" ~ output ~ "' is a directory.");
         return;
