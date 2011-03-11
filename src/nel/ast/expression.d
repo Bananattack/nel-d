@@ -20,6 +20,7 @@ module nel.ast.expression;
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
 
+static import std.conv;
 static import std.string;
 
 import nel.report;
@@ -144,7 +145,17 @@ class NumericExpression : Expression
         
         string toString()
         {
-            return std.string.format("%s", this.foldedValue);
+            switch(numericType)
+            {
+                case NumericType.INTEGER:
+                    return std.conv.to!string(foldedValue);
+                case NumericType.HEXADECIMAL:
+                    return "0x" ~ std.conv.to!string(foldedValue, 16);
+                case NumericType.BINARY:
+                    return "0b" ~ std.conv.to!string(foldedValue, 2);
+                default:
+                    return "";
+            }
         }
 }
 
