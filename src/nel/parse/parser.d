@@ -24,6 +24,7 @@ static import std.conv;
 static import std.path;
 static import std.stdio;
 static import std.string;
+static import std.algorithm;
 
 import nel.report;
 import nel.ast.builtin;
@@ -96,6 +97,28 @@ class Parser
         else
         {
             error("expected identifier but got " ~ getVerboseTokenName(token, text) ~ " instead", scanner.getPosition());
+            return false;
+        }
+    }
+    
+    bool checkIdentifier(Keyword[] permissibleKeywords)
+    {
+        checkIdentifier(true);
+        
+        if(keyword == Keyword.NONE || std.algorithm.find(permissibleKeywords, keyword).length > 0)
+        {
+            return true;
+        }
+        else
+        {
+            string[] keywordNames = [];
+            foreach(keyword; permissibleKeywords)
+            {
+                keywordNames ~= "keyword '" ~ getKeywordName(keyword) ~ "'";
+            }
+            keywordNames[keywordNames.length - 1] = "or " ~ keywordNames[keywordNames.length - 1];
+            
+            error("expected identifier, " ~ std.algorithm.reduce!("a ~ \", \" ~ b")(keywordNames) ~ ", but got " ~ getVerboseTokenName(token, text) ~ " instead", scanner.getPosition());
             return false;
         }
     }
@@ -214,6 +237,8 @@ class Parser
                         break;
                 }
                 break;
+            case Token.PUNC_LPAREN:
+            case Token.PUNC_EXCLAIM:
             case Token.INTEGER:
             case Token.HEXADECIMAL:
             case Token.BINARY:
@@ -698,6 +723,8 @@ class Parser
         ArgumentType register = ArgumentType.NONE;
         ArgumentType flag = ArgumentType.NONE;
         Argument receiver = null;
+        Expression dangler = null;
+        
         switch(token)
         {
             case Token.IDENTIFIER:
@@ -712,7 +739,7 @@ class Parser
                 }
                 else
                 {
-                    handleExpr(); // expr
+                    dangler = handleExpr(); // expr
                 }
                 break;
             case Token.PUNC_AT:
@@ -720,10 +747,11 @@ class Parser
                 receiver = handleArgument(); // arg
                 break;
             case Token.PUNC_LPAREN:
+            case Token.PUNC_EXCLAIM:
             case Token.INTEGER:
             case Token.HEXADECIMAL:
             case Token.BINARY:
-                handleExpr(); // expr
+                dangler = handleExpr(); // expr
                 break;
         }
         
@@ -765,7 +793,7 @@ class Parser
             {
                 if(receiver is null)
                 {
-                    error("expected statement, but found dangling expression before " ~ getVerboseTokenName(token, text) ~ ".", scanner.getPosition());
+                    error("expected statement, but found dangling expression" ~ (dangler !is null ? " '" ~ dangler.toString() ~ "'" : "") ~ " before " ~ getVerboseTokenName(token, text) ~ ".", scanner.getPosition());
                 }
                 else
                 {
@@ -799,7 +827,7 @@ class Parser
         SourcePosition position = new SourcePosition(scanner.getPosition());
         BuiltinInstruction instruction = BuiltinInstruction.NONE;
         
-        if(checkIdentifier())
+        if(checkIdentifier([Keyword.NOT]))
         {
             instruction = findBuiltinInstruction(text);
             if(instruction == BuiltinInstruction.NONE)
@@ -889,6 +917,7 @@ class Parser
     
     Argument handleArgument()
     {
+        Expression dangler;
         switch(token)
         {
             case Token.IDENTIFIER:
@@ -909,8 +938,8 @@ class Parser
                 }
                 else
                 {
-                    error("unprefixed term must be a register name or conditional flag, not an expression. did you make a typo, or forget @ or #?", scanner.getPosition());
-                    handleExpr(); // expr
+                    dangler = handleExpr(); // expr
+                    error("expected register name or conditional flag, but got expression" ~ (dangler !is null ? " '" ~ dangler.toString() ~ "'" : "") ~ ". did you forget @ or #?", scanner.getPosition());
                     return null;
                 }
             case Token.PUNC_AT:
@@ -1014,11 +1043,12 @@ class Parser
                 Expression expr = handleExpr(); // expr
                 return new Argument(ArgumentType.IMMEDIATE, expr, position);
             case Token.PUNC_LPAREN:
+            case Token.PUNC_EXCLAIM:
             case Token.INTEGER:
             case Token.HEXADECIMAL:
             case Token.BINARY:
-                error("expected register name or conditional flag, but got expression. did you forget @ or #?", scanner.getPosition());
-                handleExpr();
+                dangler = handleExpr(); // expr
+                error("expected register name or conditional flag, but got expression" ~ (dangler !is null ? " '" ~ dangler.toString() ~ "'" : "") ~ ". did you forget @ or #?", scanner.getPosition());
                 return null;
             default:
                 return null;
@@ -1027,7 +1057,45 @@ class Parser
     
     Expression handleExpr()
     {
-        return handleBitwiseOrExpr(); // bitwise or
+        return handleLogicalOrExpr(); // logical or
+    }
+    
+    Expression handleLogicalOrExpr()
+    {
+        Expression left = handleLogicalAndExpr(); // logical and
+        while(true)
+        {
+            SourcePosition position = new SourcePosition(scanner.getPosition());
+            switch(token)
+            {
+                case Token.OP_OR_OR:
+                    nextToken(); // ||
+                    Expression right = handleLogicalAndExpr(); // logical and
+                    left = new BinaryOperatorExpression(BinaryOperatorType.LOGICAL_OR, left, right, position);
+                    break;
+                default:
+                    return left;
+            }
+        }
+    }
+    
+    Expression handleLogicalAndExpr()
+    {
+        Expression left = handleBitwiseOrExpr(); // bitwise or
+        while(true)
+        {
+            SourcePosition position = new SourcePosition(scanner.getPosition());
+            switch(token)
+            {
+                case Token.OP_AND_AND:
+                    nextToken(); // &&
+                    Expression right = handleBitwiseOrExpr(); // bitwise or
+                    left = new BinaryOperatorExpression(BinaryOperatorType.LOGICAL_AND, left, right, position);
+                    break;
+                default:
+                    return left;
+            }
+        }
     }
     
     Expression handleBitwiseOrExpr()
@@ -1041,7 +1109,7 @@ class Parser
                 case Token.OP_OR:
                     nextToken(); // |
                     Expression right = handleBitwiseXorExpr(); // bitwise xor
-                    left = new OperatorExpression(OperatorType.OR, left, right, position);
+                    left = new BinaryOperatorExpression(BinaryOperatorType.BITWISE_OR, left, right, position);
                     break;
                 default:
                     return left;
@@ -1060,7 +1128,7 @@ class Parser
                 case Token.OP_XOR:
                     nextToken(); // ^
                     Expression right = handleBitwiseAndExpr(); // bitwise and
-                    left = new OperatorExpression(OperatorType.XOR, left, right, position);
+                    left = new BinaryOperatorExpression(BinaryOperatorType.BITWISE_XOR, left, right, position);
                     break;
                 default:
                     return left;
@@ -1070,7 +1138,7 @@ class Parser
     
     Expression handleBitwiseAndExpr()
     {
-        Expression left = handleShiftExpr(); // shift
+        Expression left = handleComparisonExpr(); // comparison
         while(true)
         {
             SourcePosition position = new SourcePosition(scanner.getPosition());
@@ -1078,13 +1146,57 @@ class Parser
             {
                 case Token.OP_AND:
                     nextToken(); // &
-                    Expression right = handleShiftExpr(); // shift
-                    left = new OperatorExpression(OperatorType.AND, left, right, position);
+                    Expression right = handleComparisonExpr(); // comparison
+                    left = new BinaryOperatorExpression(BinaryOperatorType.BITWISE_AND, left, right, position);
                     break;
                 default:
                     return left;
             }
-        }      
+        }
+    }
+    
+    Expression handleComparisonExpr()
+    {
+        Expression left = handleShiftExpr(); // shift
+        while(true)
+        {
+            SourcePosition position = new SourcePosition(scanner.getPosition());
+            switch(token)
+            {
+                case Token.OP_LT:
+                    nextToken(); // <
+                    Expression right = handleShiftExpr(); // shift
+                    left = new BinaryOperatorExpression(BinaryOperatorType.LT, left, right, position);
+                    break;
+                case Token.OP_LE:
+                    nextToken(); // <=
+                    Expression right = handleShiftExpr(); // shift
+                    left = new BinaryOperatorExpression(BinaryOperatorType.LE, left, right, position);
+                    break;
+                case Token.OP_NE:
+                    nextToken(); // <>
+                    Expression right = handleShiftExpr(); // shift
+                    left = new BinaryOperatorExpression(BinaryOperatorType.NE, left, right, position);
+                    break;
+                case Token.OP_GT:
+                    nextToken(); // >
+                    Expression right = handleShiftExpr(); // shift
+                    left = new BinaryOperatorExpression(BinaryOperatorType.GT, left, right, position);
+                    break;
+                case Token.OP_GE:
+                    nextToken(); // >=
+                    Expression right = handleShiftExpr(); // shift
+                    left = new BinaryOperatorExpression(BinaryOperatorType.GE, left, right, position);
+                    break;
+                case Token.OP_EQ:
+                    nextToken(); // ==
+                    Expression right = handleShiftExpr(); // shift
+                    left = new BinaryOperatorExpression(BinaryOperatorType.EQ, left, right, position);
+                    break;
+                default:
+                    return left;
+            }
+        }
     }
     
     Expression handleShiftExpr()
@@ -1098,12 +1210,12 @@ class Parser
                 case Token.OP_SHL:
                     nextToken(); // <<
                     Expression right = handleAdditiveExpr(); // additive
-                    left = new OperatorExpression(OperatorType.SHL, left, right, position);
+                    left = new BinaryOperatorExpression(BinaryOperatorType.SHL, left, right, position);
                     break;
                 case Token.OP_SHR:
                     nextToken(); // >>
                     Expression right = handleAdditiveExpr(); // additive
-                    left = new OperatorExpression(OperatorType.SHR, left, right, position);
+                    left = new BinaryOperatorExpression(BinaryOperatorType.SHR, left, right, position);
                     break;
                 default:
                     return left;
@@ -1122,12 +1234,12 @@ class Parser
                 case Token.OP_ADD:
                     nextToken(); // +
                     Expression right = handleMultiplicativeExpr(); // multiplicative
-                    left = new OperatorExpression(OperatorType.ADD, left, right, position);
+                    left = new BinaryOperatorExpression(BinaryOperatorType.ADD, left, right, position);
                     break;
                 case Token.OP_SUB:
                     nextToken(); // -
                     Expression right = handleMultiplicativeExpr(); // multiplicative
-                    left = new OperatorExpression(OperatorType.SUB, left, right, position);
+                    left = new BinaryOperatorExpression(BinaryOperatorType.SUB, left, right, position);
                     break;
                 default:
                     return left;
@@ -1146,17 +1258,17 @@ class Parser
                 case Token.OP_MUL:
                     nextToken(); // *
                     Expression right = handleTerm(); // term
-                    left = new OperatorExpression(OperatorType.MUL, left, right, position);
+                    left = new BinaryOperatorExpression(BinaryOperatorType.MUL, left, right, position);
                     break;
                 case Token.OP_DIV:
                     nextToken(); // /
                     Expression right = handleTerm(); // term
-                    left = new OperatorExpression(OperatorType.DIV, left, right, position);
+                    left = new BinaryOperatorExpression(BinaryOperatorType.DIV, left, right, position);
                     break;
                 case Token.OP_MOD:
                     nextToken(); // %
                     Expression right = handleTerm(); // term
-                    left = new OperatorExpression(OperatorType.MOD, left, right, position);
+                    left = new BinaryOperatorExpression(BinaryOperatorType.MOD, left, right, position);
                     break;
                 default:
                     return left;
@@ -1166,28 +1278,32 @@ class Parser
 
     Expression handleTerm()
     {
+        SourcePosition position = new SourcePosition(scanner.getPosition());
         switch(token)
         {
             case Token.INTEGER:
-                Expression expr = new NumericExpression(std.conv.parse!uint(text), scanner.getPosition());
+                Expression expr = new NumericExpression(std.conv.parse!uint(text), NumericType.INTEGER, position);
                 nextToken(); // INTEGER
                 return expr;
             case Token.HEXADECIMAL:
-                Expression expr = new NumericExpression(std.conv.parse!uint(text, 16), scanner.getPosition());
+                Expression expr = new NumericExpression(std.conv.parse!uint(text, 16), NumericType.HEXADECIMAL, position);
                 nextToken(); // HEXADECIMAL
                 return expr;
             case Token.BINARY:
-                Expression expr = new NumericExpression(std.conv.parse!uint(text, 2), scanner.getPosition());
+                Expression expr = new NumericExpression(std.conv.parse!uint(text, 2), NumericType.BINARY, position);
                 nextToken(); // BINARY
                 return expr;
             case Token.PUNC_LPAREN:
                 nextToken(); // (
-                Expression expr = handleExpr(); // expr                
+                Expression expr = handleExpr(); // expr 
                 consume(Token.PUNC_RPAREN); // )
-                return expr;
+                return new UnaryOperatorExpression(UnaryOperatorType.NONE, expr, position);
+            case Token.PUNC_EXCLAIM:
+                nextToken(); // !
+                Expression expr = handleTerm(); // term
+                return new UnaryOperatorExpression(UnaryOperatorType.LOGICAL_NOT, expr, position);
             case Token.IDENTIFIER:
                 string[] pieces;
-                SourcePosition position = new SourcePosition(scanner.getPosition());
                 
                 if(checkIdentifier())
                 {
@@ -1220,7 +1336,7 @@ class Parser
 
                 return new AttributeExpression(new Attribute(pieces, position), scanner.getPosition());
             default:
-                error("expected expression term but got " ~ getVerboseTokenName(token, text) ~ " instead", scanner.getPosition());
+                error("expected expression term but got " ~ getVerboseTokenName(token, text) ~ " instead", position);
                 nextToken();
                 return null;
         }

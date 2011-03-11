@@ -20,6 +20,8 @@ module nel.ast.expression;
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
 
+static import std.string;
+
 import nel.report;
 import nel.ast.node;
 import nel.ast.attribute;
@@ -32,10 +34,24 @@ enum ExpressionType
 {
     NUMERIC,
     ATTRIBUTE,
-    OPERATOR,
+    UNARY_OPERATOR,
+    BINARY_OPERATOR,
 }
 
-enum OperatorType
+enum NumericType
+{
+    INTEGER,
+    HEXADECIMAL,
+    BINARY,
+}
+
+enum UnaryOperatorType
+{
+    NONE,           // Brackets. Return the operand directly.
+    LOGICAL_NOT,    // ! operator. Returns 0 if operand is non-zero, 1 if operand is zero.
+}
+
+enum BinaryOperatorType
 {
     // In order of precedence levels (which will have already been taken care of by the parser):
     // * / %
@@ -47,13 +63,24 @@ enum OperatorType
     SUB,            // Subtraction 
     // << >>
     SHL,            // A logical shift left. 
-    SHR,            // A logical shift right. 
+    SHR,            // A logical shift right.
+    // < <= <> > >= =
+    LT,             // Less than comparison.
+    LE,             // Less than or equal comparison.
+    NE,             // Not equal comparison.
+    GT,             // Greater than comparison.
+    GE,             // Greater than or equal comparison.
+    EQ,             // Equal comparison.
     // &
-    AND,            // A bitwise AND operation. 
+    BITWISE_AND,    // A bitwise AND operation. 
     // ^
-    XOR,            // A bitwise XOR operation. 
+    BITWISE_XOR,    // A bitwise XOR operation. 
     // |
-    OR              // A bitwise OR operation. 
+    BITWISE_OR,     // A bitwise OR operation.
+    // &&
+    LOGICAL_AND,    // A logical AND operation.
+    // ||
+    LOGICAL_OR,     // A logical OR operation.
 }
 
 abstract class Expression : Node
@@ -91,22 +118,33 @@ abstract class Expression : Node
         {
             return fold(mustFold, forbidUndefined, []);
         }
+        
+        abstract string toString();
 }
 
 class NumericExpression : Expression
-{        
+{
+    private:
+        NumericType numericType;
+        
     public:
-        this(uint value, SourcePosition position)
+        this(uint value, NumericType numericType, SourcePosition position)
         {
             super(ExpressionType.NUMERIC, position);
             
             this.folded = true;
+            this.numericType = numericType;
             this.foldedValue = value;
         }
         
         bool fold(bool mustFold, bool forbidUndefined, Definition[] expansionStack)
         {
             return folded;
+        }
+        
+        string toString()
+        {
+            return std.string.format("%s", this.foldedValue);
         }
 }
 
@@ -186,27 +224,90 @@ class AttributeExpression : Expression
             }
             return folded;
         }
+        
+        string toString()
+        {
+            return attribute.getFullName();
+        }
 }
 
-class OperatorExpression : Expression
+class UnaryOperatorExpression : Expression
 {
     private:
-        OperatorType operatorType;
+        UnaryOperatorType unaryOperatorType;
+        Expression operand;
+        
+    public:
+        this(UnaryOperatorType unaryOperatorType, Expression operand, SourcePosition position)
+        {
+            super(ExpressionType.UNARY_OPERATOR, position);
+            
+            this.unaryOperatorType = unaryOperatorType;
+            this.operand = operand;
+        }
+        
+        UnaryOperatorType getUnaryOperatorType()
+        {
+            return unaryOperatorType;
+        }
+        
+        Expression getOperand()
+        {
+            return operand;
+        }
+        
+        bool fold(bool mustFold, bool forbidUndefined, Definition[] expansionStack)
+        {
+            folded = operand.fold(mustFold, forbidUndefined, expansionStack);
+            if(!folded)
+            {
+                return false;
+            }
+            
+            foldedValue = operand.getFoldedValue();
+            switch(unaryOperatorType)
+            {
+                case UnaryOperatorType.NONE:
+                    break;
+                case UnaryOperatorType.LOGICAL_NOT:
+                    foldedValue = foldedValue != 0 ? 0 : 1;
+                    break;
+            }
+            return folded;
+        }
+        
+        string toString()
+        {
+            string op = operand !is null ? operand.toString() : "";
+            switch(unaryOperatorType)
+            {
+                case UnaryOperatorType.NONE:
+                    return "(" ~ op ~ ")";
+                case UnaryOperatorType.LOGICAL_NOT:
+                    return "!" ~ op;
+            }
+        }
+}
+
+class BinaryOperatorExpression : Expression
+{
+    private:
+        BinaryOperatorType binaryOperatorType;
         Expression left, right;
         
     public:
-        this(OperatorType operatorType, Expression left, Expression right, SourcePosition position)
+        this(BinaryOperatorType binaryOperatorType, Expression left, Expression right, SourcePosition position)
         {
-            super(ExpressionType.OPERATOR, position);
+            super(ExpressionType.BINARY_OPERATOR, position);
             
-            this.operatorType = operatorType;
+            this.binaryOperatorType = binaryOperatorType;
             this.left = left;
             this.right = right;
         }
         
-        OperatorType getOperatorType()
+        BinaryOperatorType getBinaryOperatorType()
         {
-            return operatorType;
+            return binaryOperatorType;
         }
         
         Expression getLeft()
@@ -221,20 +322,34 @@ class OperatorExpression : Expression
         
         bool fold(bool mustFold, bool forbidUndefined, Definition[] expansionStack)
         {
-            bool lfolded = left.fold(mustFold, forbidUndefined);
-            bool rfolded = right.fold(mustFold, forbidUndefined);
+            bool lfolded = left.fold(mustFold, forbidUndefined, expansionStack);
+            bool rfolded = false;
             
-            if(!lfolded || !rfolded)
+            // Fold now if not short-circuited.
+            switch(binaryOperatorType)
+            {
+                case BinaryOperatorType.LOGICAL_AND:
+                case BinaryOperatorType.LOGICAL_OR:
+                    break;
+                default:
+                    rfolded = right.fold(mustFold, forbidUndefined, expansionStack);
+                    if(!rfolded)
+                    {
+                        return false;
+                    }
+                    break;
+            }
+            if(!lfolded)
             {
                 return false;
             }
             folded = true;
             
             uint ls = left.getFoldedValue();
-            uint rs = right.getFoldedValue();
-            switch(operatorType)
+            uint rs = right.getFoldedValue(); // rs is undefined if right isn't folded, so avoid using its value before then.
+            switch(binaryOperatorType)
             {
-                case OperatorType.MUL:
+                case BinaryOperatorType.MUL:
                     if(ls > MAX_VALUE / rs)
                     {
                         error("multiplication yields result which will overflow outside of 0..65535.", right.getPosition());
@@ -245,7 +360,7 @@ class OperatorExpression : Expression
                         foldedValue = ls * rs;
                     }
                     break;
-                case OperatorType.DIV:
+                case BinaryOperatorType.DIV:
                     if(rs == 0)
                     {
                         error("division by zero is undefined.", right.getPosition());
@@ -256,7 +371,7 @@ class OperatorExpression : Expression
                         foldedValue = ls / rs;
                     }
                     break;
-                case OperatorType.MOD:
+                case BinaryOperatorType.MOD:
                     if(rs == 0)
                     {
                         error("modulo by zero is undefined.", right.getPosition());
@@ -264,10 +379,10 @@ class OperatorExpression : Expression
                     }
                     else
                     {
-                        foldedValue = ls / rs;
+                        foldedValue = ls % rs;
                     }
                     break;
-                case OperatorType.ADD:
+                case BinaryOperatorType.ADD:
                     if(ls + MAX_VALUE < rs)
                     {
                         error("addition yields result which will overflow outside of 0..65535.", right.getPosition());
@@ -278,7 +393,7 @@ class OperatorExpression : Expression
                         foldedValue = ls + rs;
                     }
                     break;
-                case OperatorType.SUB:
+                case BinaryOperatorType.SUB:
                     if(ls < rs)
                     {
                         error("subtraction yields result which will overflow outside of 0..65535.", right.getPosition());
@@ -289,7 +404,7 @@ class OperatorExpression : Expression
                         foldedValue = ls - rs;
                     }
                     break;
-                case OperatorType.SHL:
+                case BinaryOperatorType.SHL:
                     // If shifting more than N bits, or ls << rs > 2^N-1, then error.
                     if(rs > 16 || (rs > 0 && (ls & ~(1 << (16 - rs))) != 0))
                     {
@@ -301,19 +416,124 @@ class OperatorExpression : Expression
                         foldedValue = ls << rs;
                     }
                     break;
-                case OperatorType.SHR:
+                case BinaryOperatorType.SHR:
                     foldedValue = ls >> rs;
                     break;
-                case OperatorType.AND:
+                case BinaryOperatorType.LT:
+                    foldedValue = ls < rs ? 1 : 0;
+                    break;
+                case BinaryOperatorType.LE:
+                    foldedValue = ls <= rs ? 1 : 0;
+                    break;
+                case BinaryOperatorType.NE:
+                    foldedValue = ls != rs ? 1 : 0;
+                    break;
+                case BinaryOperatorType.GT:
+                    foldedValue = ls > rs ? 1 : 0;
+                    break;
+                case BinaryOperatorType.GE:
+                    foldedValue = ls >= rs ? 1 : 0;
+                    break;
+                case BinaryOperatorType.EQ:
+                    foldedValue = ls == rs ? 1 : 0;
+                    break;
+                case BinaryOperatorType.BITWISE_AND:
                     foldedValue = ls & rs;
                     break;
-                case OperatorType.XOR:
+                case BinaryOperatorType.BITWISE_XOR:
                     foldedValue = ls ^ rs;
                     break;
-                case OperatorType.OR:
+                case BinaryOperatorType.BITWISE_OR:
                     foldedValue = ls | rs;
+                    break;
+                case BinaryOperatorType.LOGICAL_AND:
+                    // Short-circuiting. Don't evaluate right branch if left branch is zero.
+                    if(ls == 0)
+                    {
+                        foldedValue = 0;
+                    }
+                    // Left is non-zero. We must evaluate the right branch.
+                    else
+                    {
+                        rfolded = right.fold(mustFold, forbidUndefined, expansionStack);
+                        if(!rfolded)
+                        {   
+                            folded = false;
+                            return false;
+                        }
+                        rs = right.getFoldedValue();
+                        // True if ls != 0 && rs != 0.
+                        // False if ls != 0 && rs == 0.
+                        foldedValue = rs != 0 ? 1 : 0;
+                    }
+                    break;
+                case BinaryOperatorType.LOGICAL_OR:
+                    // Short-circuiting. Don't evaluate right branch if left branch is non-zero.
+                    if(ls != 0)
+                    {
+                        foldedValue = 1;
+                    }
+                    // Left is false. We must evaluate the right branch.
+                    else
+                    {
+                        rfolded = right.fold(mustFold, forbidUndefined, expansionStack);
+                        if(!rfolded)
+                        {   
+                            folded = false;
+                            return false;
+                        }
+                        rs = right.getFoldedValue();
+                        // False if ls == 0 && rs == 0.
+                        // True if ls == 0 && rs != 0.
+                        foldedValue = rs == 0 ? 0 : 1;
+                    }
                     break;
             }
             return folded;
+        }
+        
+        string toString()
+        {
+            string ls = left !is null ? left.toString() : "";
+            string rs = right !is null ? right.toString() : "";
+            switch(binaryOperatorType)
+            {
+                case BinaryOperatorType.MUL:
+                    return ls ~ " * " ~ rs;
+                case BinaryOperatorType.DIV:
+                    return ls ~ " / " ~ rs;
+                case BinaryOperatorType.MOD:
+                    return ls ~ " % " ~ rs;
+                case BinaryOperatorType.ADD:
+                    return ls ~ " + " ~ rs;
+                case BinaryOperatorType.SUB:
+                    return ls ~ " - " ~ rs;
+                case BinaryOperatorType.SHL:
+                    return ls ~ " << " ~ rs;
+                case BinaryOperatorType.SHR:
+                    return ls ~ " >> " ~ rs;
+                case BinaryOperatorType.LT:
+                    return ls ~ " < " ~ rs;
+                case BinaryOperatorType.LE:
+                    return ls ~ " <= " ~ rs;
+                case BinaryOperatorType.NE:
+                    return ls ~ " <> " ~ rs;
+                case BinaryOperatorType.GT:
+                    return ls ~ " > " ~ rs;
+                case BinaryOperatorType.GE:
+                    return ls ~ " >= " ~ rs;
+                case BinaryOperatorType.EQ:
+                    return ls ~ " = " ~ rs;
+                case BinaryOperatorType.BITWISE_AND:
+                    return ls ~ " & " ~ rs;
+                case BinaryOperatorType.BITWISE_XOR:
+                    return ls ~ " ^ " ~ rs;
+                case BinaryOperatorType.BITWISE_OR:
+                    return ls ~ " | " ~ rs;
+                case BinaryOperatorType.LOGICAL_AND:
+                    return ls ~ " && " ~ rs;
+                case BinaryOperatorType.LOGICAL_OR:
+                    return ls ~ " || " ~ rs;
+            }
         }
 }

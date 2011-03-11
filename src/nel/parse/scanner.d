@@ -42,6 +42,8 @@ enum State
     SLASH_STAR_COMMENT_STAR,
     LT,
     GT,
+    AMPERSAND,
+    PIPE,
 }
 
 class Scanner
@@ -132,6 +134,8 @@ class Scanner
                                 case ']': position++; return Token.PUNC_RBRACKET;
                                 case '{': position++; return Token.PUNC_LBRACE;
                                 case '}': position++; return Token.PUNC_RBRACE;
+                                case ';': position++; return Token.PUNC_SEMI;
+                                case '!': position++; return Token.PUNC_EXCLAIM;
                                 case '+': position++; return Token.OP_ADD;
                                 case '-': position++; return Token.OP_SUB;
                                 case '*': position++; return Token.OP_MUL;
@@ -139,9 +143,13 @@ class Scanner
                                     state = State.SLASH;
                                     break;
                                 case '%': position++; return Token.OP_MOD;
-                                case '|': position++; return Token.OP_OR;
                                 case '^': position++; return Token.OP_XOR;
-                                case '&': position++; return Token.OP_AND;
+                                case '&':
+                                    state = State.AMPERSAND;
+                                    break;
+                                case '|':
+                                    state = State.PIPE;
+                                    break;
                                 case '<':
                                     state = State.LT;
                                     break;
@@ -358,6 +366,30 @@ class Scanner
                             else
                             {
                                 return Token.OP_GT;
+                            }
+                            break;
+                        case State.AMPERSAND:
+                            state = State.START;
+                            if(c == '&')
+                            {
+                                position++;
+                                return Token.OP_AND_AND;
+                            }
+                            else
+                            {
+                                return Token.OP_AND;
+                            }
+                            break;
+                        case State.PIPE:
+                            state = State.START;
+                            if(c == '|')
+                            {
+                                position++;
+                                return Token.OP_OR_OR;
+                            }
+                            else
+                            {
+                                return Token.OP_OR;
                             }
                             break;
                     }

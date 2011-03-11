@@ -91,6 +91,8 @@ static this()
         "bit": BuiltinInstruction.BIT,
         "inc": BuiltinInstruction.INC,
         "dec": BuiltinInstruction.DEC,
+        "not": BuiltinInstruction.NOT,
+        "neg": BuiltinInstruction.NEG,
         "shl": BuiltinInstruction.SHL,
         "shr": BuiltinInstruction.SHR,
         "rol": BuiltinInstruction.ROL,
