@@ -1,72 +1,72 @@
 package ppu
     package oam
-        let address = 0x2003
-        let data = 0x2004
-        let dma = 0x4014
+        let address : word = 0x2003
+        let data : word = 0x2004
+        let dma : word = 0x4014
 
-        let ATTRIBUTE_PAL_0 = 0x00
-        let ATTRIBUTE_PAL_1 = 0x01
-        let ATTRIBUTE_PAL_2 = 0x02
-        let ATTRIBUTE_PAL_3 = 0x03
+        let ATTRIBUTE_PAL_0 : byte = 0x00
+        let ATTRIBUTE_PAL_1 : byte = 0x01
+        let ATTRIBUTE_PAL_2 : byte = 0x02
+        let ATTRIBUTE_PAL_3 : byte = 0x03
         // 0x04, 0x8, 0x10 are unused
-        let ATTRIBUTE_BEHIND = 0x20
-        let ATTRIBUTE_HFLIP = 0x40
-        let ATTRIBUTE_VFLIP = 0x80
+        let ATTRIBUTE_BEHIND : byte = 0x20
+        let ATTRIBUTE_HFLIP : byte = 0x40
+        let ATTRIBUTE_VFLIP : byte = 0x80
     end
 
-    let ctrl = 0x2000
-    let mask = 0x2001
-    let status = 0x2002
+    let ctrl : word = 0x2000
+    let mask : word = 0x2001
+    let status : word = 0x2002
     // oam stuff in separate package.
-    let scroll = 0x2005
-    let address = 0x2006
-    let data = 0x2007
+    let scroll : word = 0x2005
+    let address : word = 0x2006
+    let data : word = 0x2007
     
-    let CTRL_NAMETABLE_0 = 0x00
-    let CTRL_NAMETABLE_1 = 0x01
-    let CTRL_NAMETABLE_2 = 0x02
-    let CTRL_NAMETABLE_3 = 0x03
-    let CTRL_VRAM_STEP_X = 0x00
-    let CTRL_VRAM_STEP_Y = 0x04
-    let CTRL_SPRITE_PATTERN_0 = 0x00
-    let CTRL_SPRITE_PATTERN_1 = 0x08
-    let CTRL_BG_PATTERN_0 = 0x00
-    let CTRL_BG_PATTERN_1 = 0x10
-    let CTRL_SPRITE_8x8 = 0x00
-    let CTRL_SPRITE_8x16 = 0x20
+    let CTRL_NAMETABLE_0 : byte = 0x00
+    let CTRL_NAMETABLE_1 : byte = 0x01
+    let CTRL_NAMETABLE_2 : byte = 0x02
+    let CTRL_NAMETABLE_3 : byte = 0x03
+    let CTRL_VRAM_STEP_X : byte = 0x00
+    let CTRL_VRAM_STEP_Y : byte = 0x04
+    let CTRL_SPRITE_PATTERN_0 : byte = 0x00
+    let CTRL_SPRITE_PATTERN_1 : byte = 0x08
+    let CTRL_BG_PATTERN_0 : byte = 0x00
+    let CTRL_BG_PATTERN_1 : byte = 0x10
+    let CTRL_SPRITE_8x8 : byte = 0x00
+    let CTRL_SPRITE_8x16 : byte = 0x20
     // ppu ctrl flag 0x40 is unused
-    let CTRL_NMI = 0x80
-    let CTRL_DISABLE = 0x00
+    let CTRL_NMI : byte = 0x80
+    let CTRL_DISABLE : byte = 0x00
 
-    let MASK_GREYSCALE = 0x01
-    let MASK_LEFTMOST_BG = 0x02
-    let MASK_LEFTMOST_SPRITES = 0x04
-    let MASK_RENDER_BG = 0x08
-    let MASK_RENDER_SPRITES = 0x10
-    let MASK_INTENSIFY_R = 0x20
-    let MASK_INTENSIFY_G = 0x40
-    let MASK_INTENSIFY_B = 0x80
+    let MASK_GREYSCALE : byte = 0x01
+    let MASK_LEFTMOST_BG : byte = 0x02
+    let MASK_LEFTMOST_SPRITES : byte = 0x04
+    let MASK_RENDER_BG : byte = 0x08
+    let MASK_RENDER_SPRITES : byte = 0x10
+    let MASK_INTENSIFY_R : byte = 0x20
+    let MASK_INTENSIFY_G : byte = 0x40
+    let MASK_INTENSIFY_B : byte = 0x80
     
     // ppu status flags 0x00..0x10 are unused
-    let STATUS_SPRITE_OVERFLOW = 0x20
-    let STATUS_SPRITE_ZERO_HIT = 0x40
-    let STATUS_VBLANK = 0x80
+    let STATUS_SPRITE_OVERFLOW : byte = 0x20
+    let STATUS_SPRITE_ZERO_HIT : byte = 0x40
+    let STATUS_VBLANK : byte = 0x80
 
     // Base nametable address
-    let NAMETABLE_BASE = 0x2000
+    let NAMETABLE_BASE : word = 0x2000
     // Offset to the attribute section of a nametable
-    let NAMETABLE_ATTRIBUTE = 0x3C0
+    let NAMETABLE_ATTRIBUTE : word = 0x3C0
     // Size of each nametable in bytes.
-    let NAMETABLE_SIZE = 0x400
+    let NAMETABLE_SIZE : word = 0x400
     // Total number of nametables.
-    let NAMETABLE_TOTAL = 4
+    let NAMETABLE_TOTAL : byte = 4
     
     // Base palette address.
-    let PALETTE_BASE = 0x3F00
+    let PALETTE_BASE : word = 0x3F00
     // Size of each palette in bytes.
-    let PALETTE_SIZE = 0x04
+    let PALETTE_SIZE : byte = 0x04
     // Total number of palettes.
-    let PALETTE_TOTAL = 8
+    let PALETTE_TOTAL : byte = 8
 end
 
 package apu

@@ -27,6 +27,8 @@ import nel.report;
 import nel.ast.node;
 import nel.ast.attribute;
 import nel.ast.definition;
+import nel.ast.storage_type;
+import nel.ast.constant_declaration;
 
 private immutable uint MAX_VALUE = 65535;
 private immutable uint EXPANSION_STACK_MAX = 16;
@@ -49,6 +51,8 @@ enum NumericType
 enum UnaryOperatorType
 {
     NONE,           // Brackets. Return the operand directly.
+    BYTE_LOW,       // < operator. Returns operand & 0xFF
+    BYTE_HIGH,      // > operator. Returns (operand >> 8)
     LOGICAL_NOT,    // ! operator. Returns 0 if operand is non-zero, 1 if operand is zero.
 }
 
@@ -181,7 +185,8 @@ class AttributeExpression : Expression
                 {
                     case DefinitionType.CONSTANT:
                         ConstantDefinition constant = cast(ConstantDefinition) def;
-                        Expression expression = constant.getDeclaration().getExpression();
+                        ConstantDeclaration decl = constant.getDeclaration();
+                        Expression expression = decl.getExpression();
                         
                         expansionStack ~= constant;
                         if(expansionStack.length > EXPANSION_STACK_MAX)
@@ -204,6 +209,14 @@ class AttributeExpression : Expression
                         expansionStack.length = expansionStack.length - 1; // Pop.
                         
                         foldedValue = expression.getFoldedValue();
+                        if(decl.getSize() == StorageType.BYTE && foldedValue > 255)
+                        {
+                            string message = std.string.format(
+                                "constant '%s' is declared as 'byte'-sized, but has the value %s, which is outside of representable 8-bit range 0..255",
+                                attribute.getFullName(), foldedValue
+                            );
+                            error(message, getPosition());
+                        }
                         break;
                     case DefinitionType.VARIABLE:
                         VariableDefinition variable = cast(VariableDefinition) def;
@@ -280,6 +293,12 @@ class UnaryOperatorExpression : Expression
             {
                 case UnaryOperatorType.NONE:
                     break;
+                case UnaryOperatorType.BYTE_LOW:
+                    foldedValue = foldedValue & 0xFF;
+                    break;
+                case UnaryOperatorType.BYTE_HIGH:
+                    foldedValue = foldedValue >> 8;
+                    break;
                 case UnaryOperatorType.LOGICAL_NOT:
                     foldedValue = foldedValue != 0 ? 0 : 1;
                     break;
@@ -294,6 +313,10 @@ class UnaryOperatorExpression : Expression
             {
                 case UnaryOperatorType.NONE:
                     return "(" ~ op ~ ")";
+                case UnaryOperatorType.BYTE_LOW:
+                    return "<" ~ op;
+                case UnaryOperatorType.BYTE_HIGH:
+                    return ">" ~ op;
                 case UnaryOperatorType.LOGICAL_NOT:
                     return "!" ~ op;
             }

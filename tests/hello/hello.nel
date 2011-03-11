@@ -10,7 +10,7 @@ rom bank 0, 0xC000:
     include 'hardware.nel'
 
     def load_palette: begin
-        a: get #(ppu.PALETTE_BASE >> 8), put @ppu.address, get #(ppu.PALETTE_BASE & 0xFF), put @ppu.address
+        a: get #>ppu.PALETTE_BASE, put @ppu.address, get #<ppu.PALETTE_BASE, put @ppu.address
         x: get #0
         def loop: begin
             a: get @palette[x], put @ppu.data
@@ -21,14 +21,14 @@ rom bank 0, 0xC000:
     end
     
     def print_text: begin
-        let START_X = 10
-        let START_Y = 13
-        let TILE_ADDRESS = ppu.NAMETABLE_BASE + (START_Y * 32 + START_X)
+        let START_X : byte = 10
+        let START_Y : byte = 13
+        let TILE_ADDRESS : word = ppu.NAMETABLE_BASE + (START_Y * 32 + START_X)
         
         // Read PPU status to reset its state.
         a: get @ppu.status
         // Now setup the PPU for copying tiles.
-        a: get #(TILE_ADDRESS >> 8), put @ppu.address, get #(TILE_ADDRESS & 0xFF), put @ppu.address
+        a: get #>TILE_ADDRESS, put @ppu.address, get #<TILE_ADDRESS, put @ppu.address
         
         x: get #0
         def loop: begin

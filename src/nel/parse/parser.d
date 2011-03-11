@@ -238,6 +238,8 @@ class Parser
                 }
                 break;
             case Token.PUNC_LPAREN:
+            case Token.OP_LT:
+            case Token.OP_GT:
             case Token.PUNC_EXCLAIM:
             case Token.INTEGER:
             case Token.HEXADECIMAL:
@@ -480,6 +482,7 @@ class Parser
         SourcePosition position = new SourcePosition(scanner.getPosition());
         
         string name;
+        StorageType storage = StorageType.WORD;
         Expression value;
         
         nextToken(); // IDENTIFIER (keyword 'let')
@@ -488,10 +491,35 @@ class Parser
             name = text;
         }
         nextToken(); // IDENTIFIER
-        consume(Token.OP_EQ);
-        value = handleExpr();
         
-        return new ConstantDeclaration(name, value, position);
+        // (':' ('byte'|'word'))?
+        if(token == Token.PUNC_COLON)
+        {
+            consume(Token.PUNC_COLON); // :
+            if(checkIdentifier(true))
+            {
+                switch(keyword)
+                {
+                    case Keyword.BYTE:
+                        storage = StorageType.BYTE;
+                        break;
+                    case Keyword.WORD:
+                        storage = StorageType.WORD;
+                        break;
+                    default:
+                        error("unknown storage specifier '" ~ text ~ "'. only 'byte' and 'word' are allowed.", scanner.getPosition());
+                }
+                nextToken(); // IDENTIFIER (keyword 'byte'/'word')
+            }
+            else
+            {
+                error("expected a storage specifier after ':' in constant declaration, but got " ~ getVerboseTokenName(token, text) ~ " instead", scanner.getPosition());
+            }        
+        }
+        consume(Token.OP_EQ); // =
+        value = handleExpr(); // expr
+        
+        return new ConstantDeclaration(name, value, storage, position);
     }
     
     VariableDeclaration handleVariableDeclaration()
@@ -747,6 +775,8 @@ class Parser
                 receiver = handleArgument(); // arg
                 break;
             case Token.PUNC_LPAREN:
+            case Token.OP_LT:
+            case Token.OP_GT:
             case Token.PUNC_EXCLAIM:
             case Token.INTEGER:
             case Token.HEXADECIMAL:
@@ -1043,6 +1073,8 @@ class Parser
                 Expression expr = handleExpr(); // expr
                 return new Argument(ArgumentType.IMMEDIATE, expr, position);
             case Token.PUNC_LPAREN:
+            case Token.OP_LT:
+            case Token.OP_GT:
             case Token.PUNC_EXCLAIM:
             case Token.INTEGER:
             case Token.HEXADECIMAL:
@@ -1298,6 +1330,14 @@ class Parser
                 Expression expr = handleExpr(); // expr 
                 consume(Token.PUNC_RPAREN); // )
                 return new UnaryOperatorExpression(UnaryOperatorType.NONE, expr, position);
+            case Token.OP_LT:
+                nextToken(); // <
+                Expression expr = handleTerm(); // term
+                return new UnaryOperatorExpression(UnaryOperatorType.BYTE_LOW, expr, position);
+            case Token.OP_GT:
+                nextToken(); // >
+                Expression expr = handleTerm(); // term
+                return new UnaryOperatorExpression(UnaryOperatorType.BYTE_HIGH, expr, position);
             case Token.PUNC_EXCLAIM:
                 nextToken(); // !
                 Expression expr = handleTerm(); // term

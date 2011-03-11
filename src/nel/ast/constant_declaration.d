@@ -24,6 +24,7 @@ import nel.report;
 import nel.ast.statement;
 import nel.ast.definition;
 import nel.ast.expression;
+import nel.ast.storage_type;
 import nel.ast.symbol_table;
 
 class ConstantDeclaration : Statement
@@ -31,13 +32,20 @@ class ConstantDeclaration : Statement
     private:
         string name;
         Expression expression;
+        StorageType size;
         
     public:
-        this(string name, Expression expression, SourcePosition position)
+        this(string name, Expression expression, StorageType size, SourcePosition position)
         {
             super(StatementType.CONSTANT, position);
             this.name = name;
+            this.size = size;
             this.expression = expression;
+        }
+        
+        StorageType getSize()
+        {
+            return size;
         }
         
         Expression getExpression()
