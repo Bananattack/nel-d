@@ -1,0 +1,11 @@
+ines:
+    mapper = 0,
+    prg = 1,
+    chr = 1;
+    
+    
+let size = 1 !(1 && 20 >= y <> 5 < 0b0001 = 0xFACE || 3 <= 3 > a * a.b.c - (99 / 1304 % 100))
+    
+rom bank 0, 0xC000:
+    a: get foo;
+    

@@ -98,7 +98,7 @@ class BlockStatement : Statement
                 }
                 else if(blockType == BlockType.MAIN && !header)
                 {
-                    if(statement.getStatementType() != StatementType.CONSTANT)
+                    if(statement.getStatementType() != StatementType.CONSTANT && statement.getStatementType() != StatementType.ENUM)
                     {
                         error("statement that is not a constant declaration found before the ines header.",
                             statement.getPosition(), true);
@@ -157,7 +157,8 @@ class BlockStatement : Statement
             // Gather all constant definitions.
             foreach(i, statement; statements)
             {
-                if(statement.getStatementType() == StatementType.CONSTANT)
+                if(statement.getStatementType() == StatementType.CONSTANT
+                    || statement.getStatementType() == StatementType.ENUM)
                 {
                     statement.aggregate();
                 }
@@ -169,6 +170,7 @@ class BlockStatement : Statement
                 foreach(i, statement; statements)
                 {
                     if(statement.getStatementType() != StatementType.CONSTANT
+                        && statement.getStatementType() != StatementType.ENUM
                         && statement.getStatementType() != StatementType.HEADER)
                     {
                         statement.aggregate();

@@ -4,14 +4,15 @@ package ppu
         let data : word = 0x2004
         let dma : word = 0x4014
 
-        let ATTRIBUTE_PAL_0 : byte = 0x00
-        let ATTRIBUTE_PAL_1 : byte = 0x01
-        let ATTRIBUTE_PAL_2 : byte = 0x02
-        let ATTRIBUTE_PAL_3 : byte = 0x03
-        // 0x04, 0x8, 0x10 are unused
-        let ATTRIBUTE_BEHIND : byte = 0x20
-        let ATTRIBUTE_HFLIP : byte = 0x40
-        let ATTRIBUTE_VFLIP : byte = 0x80
+        enum:
+            ATTRIBUTE_PAL_0,
+            ATTRIBUTE_PAL_1,
+            ATTRIBUTE_PAL_2,
+            ATTRIBUTE_PAL_3,
+            // 0x04, 0x8, 0x10 are unused
+            ATTRIBUTE_BEHIND = 0x20,
+            ATTRIBUTE_HFLIP = 0x40,
+            ATTRIBUTE_VFLIP = 0x80
     end
 
     let ctrl : word = 0x2000
@@ -22,35 +23,38 @@ package ppu
     let address : word = 0x2006
     let data : word = 0x2007
     
-    let CTRL_NAMETABLE_0 : byte = 0x00
-    let CTRL_NAMETABLE_1 : byte = 0x01
-    let CTRL_NAMETABLE_2 : byte = 0x02
-    let CTRL_NAMETABLE_3 : byte = 0x03
-    let CTRL_VRAM_STEP_X : byte = 0x00
-    let CTRL_VRAM_STEP_Y : byte = 0x04
-    let CTRL_SPRITE_PATTERN_0 : byte = 0x00
-    let CTRL_SPRITE_PATTERN_1 : byte = 0x08
-    let CTRL_BG_PATTERN_0 : byte = 0x00
-    let CTRL_BG_PATTERN_1 : byte = 0x10
-    let CTRL_SPRITE_8x8 : byte = 0x00
-    let CTRL_SPRITE_8x16 : byte = 0x20
-    // ppu ctrl flag 0x40 is unused
-    let CTRL_NMI : byte = 0x80
-    let CTRL_DISABLE : byte = 0x00
+    enum:
+        CTRL_NAMETABLE_0,
+        CTRL_NAMETABLE_1,
+        CTRL_NAMETABLE_2,
+        CTRL_NAMETABLE_3,
+        CTRL_VRAM_STEP_X = 0x00,
+        CTRL_VRAM_STEP_Y = 0x04,
+        CTRL_SPRITE_PATTERN_0 = 0x00,
+        CTRL_SPRITE_PATTERN_1 = 0x08,
+        CTRL_BG_PATTERN_0 = 0x00,
+        CTRL_BG_PATTERN_1 = 0x10,
+        CTRL_SPRITE_8x8 = 0x00,
+        CTRL_SPRITE_8x16 = 0x20,
+        // ppu ctrl flag 0x40 is unused
+        CTRL_DISABLE = 0x00,
+        CTRL_NMI = 0x80
 
-    let MASK_GREYSCALE : byte = 0x01
-    let MASK_LEFTMOST_BG : byte = 0x02
-    let MASK_LEFTMOST_SPRITES : byte = 0x04
-    let MASK_RENDER_BG : byte = 0x08
-    let MASK_RENDER_SPRITES : byte = 0x10
-    let MASK_INTENSIFY_R : byte = 0x20
-    let MASK_INTENSIFY_G : byte = 0x40
-    let MASK_INTENSIFY_B : byte = 0x80
+    enum:
+        MASK_GREYSCALE = 0x01,
+        MASK_LEFTMOST_BG = 0x02,
+        MASK_LEFTMOST_SPRITES = 0x04,
+        MASK_RENDER_BG = 0x08,
+        MASK_RENDER_SPRITES = 0x10,
+        MASK_INTENSIFY_R = 0x20,
+        MASK_INTENSIFY_G = 0x40,
+        MASK_INTENSIFY_B = 0x80
     
-    // ppu status flags 0x00..0x10 are unused
-    let STATUS_SPRITE_OVERFLOW : byte = 0x20
-    let STATUS_SPRITE_ZERO_HIT : byte = 0x40
-    let STATUS_VBLANK : byte = 0x80
+    enum:
+        // ppu status flags 0x00..0x10 are unused
+        STATUS_SPRITE_OVERFLOW = 0x20,
+        STATUS_SPRITE_ZERO_HIT = 0x40,
+        STATUS_VBLANK = 0x80
 
     // Base nametable address
     let NAMETABLE_BASE : word = 0x2000
@@ -101,18 +105,20 @@ package apu
     let flag = 0x4015
     let sequencer = 0x4017
     
-    let FLAG_SQUARE1_SEQUENCED = 0x01
-    let FLAG_SQUARE2_SEQUENCED = 0x02
-    let FLAG_TRIANGLE_SEQUENCED = 0x04
-    let FLAG_NOISE_SEQUENCED = 0x08
-    let FLAG_DMC_RESTART = 0x10
-    // apu flag 0x20 is unused.
-    let FLAG_FRAME_IRQ = 0x40
-    let FLAG_DMC_IRQ = 0x80
+    enum:
+        FLAG_SQUARE1_SEQUENCED = 0x01,
+        FLAG_SQUARE2_SEQUENCED = 0x02,
+        FLAG_TRIANGLE_SEQUENCED = 0x04,
+        FLAG_NOISE_SEQUENCED = 0x08,
+        FLAG_DMC_RESTART = 0x10,
+        // apu flag 0x20 is unused.
+        FLAG_FRAME_IRQ = 0x40,
+        FLAG_DMC_IRQ = 0x80
     
-    let SEQUENCER_FOUR_STEP = 0x00
-    let SEQUENCER_FIVE_STEP = 0x40
-    let SEQUENCER_DISABLE_IRQ = 0x80
+    enum:
+        SEQUENCER_FOUR_STEP = 0x00,
+        SEQUENCER_FIVE_STEP = 0x40,
+        SEQUENCER_DISABLE_IRQ = 0x80
 end
 
 package joy
@@ -120,14 +126,15 @@ package joy
     let in1 = 0x4016
     let in2 = 0x4017
     
-    let A = 0x01
-    let B = 0x02
-    let SELECT = 0x04
-    let START = 0x08
-    let UP = 0x10
-    let DOWN = 0x20
-    let LEFT = 0x40
-    let RIGHT = 0x80
+    enum:
+        A = 0x01,
+        B = 0x02,
+        SELECT = 0x04,
+        START = 0x08,
+        UP = 0x10,
+        DOWN = 0x20,
+        LEFT = 0x40,
+        RIGHT = 0x80
 end
 
 package mmc3
@@ -155,20 +162,23 @@ package mmc3
     let mirror = 0xA000
     let wram = 0xA001
     
-    let SELECT_2K_CHR_00 = 0x00
-    let SELECT_2K_CHR_08 = 0x01
-    let SELECT_1K_CHR_10 = 0x02
-    let SELECT_1K_CHR_14 = 0x03
-    let SELECT_1K_CHR_18 = 0x04
-    let SELECT_1K_CHR_1C = 0x05
-    let SELECT_8K_PRG_80 = 0x06
-    let SELECT_8K_CHR_A0 = 0x07
-    let SELECT_PRG_SWAP = 0x40
-    let SELECT_CHR_SWAP = 0x80
+    enum:
+        SELECT_2K_CHR_00,
+        SELECT_2K_CHR_08,
+        SELECT_1K_CHR_10,
+        SELECT_1K_CHR_14,
+        SELECT_1K_CHR_18,
+        SELECT_1K_CHR_1C,
+        SELECT_8K_PRG_80,
+        SELECT_8K_PRG_A0,
+        SELECT_PRG_SWAP = 0x40,
+        SELECT_CHR_SWAP = 0x80
+        
+    enum:
+        MIRROR_VERTICAL,
+        MIRROR_HORIZONTAL
     
-    let MIRROR_VERTICAL = 0x0
-    let MIRROR_HORIZONTAL = 0x1
-    
-    let WRAM_READONLY = 0x40
-    let WRAM_ENABLE = 0x80
+    enum:
+        WRAM_READONLY = 0x40,
+        WRAM_ENABLE = 0x80
 end

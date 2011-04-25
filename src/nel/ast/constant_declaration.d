@@ -33,6 +33,7 @@ class ConstantDeclaration : Statement
         string name;
         Expression expression;
         StorageType size;
+        uint expressionOffset;
         
     public:
         this(string name, Expression expression, StorageType size, SourcePosition position)
@@ -41,6 +42,16 @@ class ConstantDeclaration : Statement
             this.name = name;
             this.size = size;
             this.expression = expression;
+            this.expressionOffset = 0;
+        }
+        
+        this(string name, Expression expression, uint expressionOffset, StorageType size, SourcePosition position)
+        {
+            super(StatementType.CONSTANT, position);
+            this.name = name;
+            this.size = size;
+            this.expression = expression;
+            this.expressionOffset = expressionOffset;
         }
         
         StorageType getSize()
@@ -51,6 +62,11 @@ class ConstantDeclaration : Statement
         Expression getExpression()
         {
             return expression;
+        }
+        
+        uint getExpressionOffset()
+        {
+            return expressionOffset;
         }
         
         void aggregate()

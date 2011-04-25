@@ -1,0 +1,20 @@
+// Okay. 1 element.
+enum: blah
+
+// Okay. 2 elements.
+enum: blah, blah
+
+// Error, because 'foo' should be 'byte'/'word'
+enum: foo: bar
+
+// Error, because it wanted a ':'. Recovers after nonsensical token 'err'
+enum err foo, bar
+
+// Error, expected a ':' after 'byte'. Recovers after nonsensical token 'err'
+enum: byte err foo
+
+// Valid header, were the rest to compile
+ines:
+    mapper = 0,
+    prg = 1,
+    chr = 1

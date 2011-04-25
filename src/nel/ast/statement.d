@@ -34,7 +34,8 @@ enum StatementType
     DATA,                   // A data statement. 
     COMMAND,                // A command statement. 
     BRANCH,                 // A branching statement, like goto, call or return. 
-    EMBED                   // A point to embed a binary file. 
+    EMBED,                  // A point to embed a binary file. 
+    ENUM,                   // An enumeration declaration.
 };
 
 abstract class Statement : Node

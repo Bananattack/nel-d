@@ -37,6 +37,7 @@ import nel.ast.data_statement;
 import nel.ast.block_statement;
 import nel.ast.embed_statement;
 import nel.ast.branch_statement;
+import nel.ast.enum_declaration;
 import nel.ast.header_statement;
 import nel.ast.command_statement;
 import nel.ast.label_declaration;
@@ -214,6 +215,8 @@ class Parser
                         return handleLabelDeclaration();
                     case Keyword.LET:
                         return handleConstantDeclaration();
+                    case Keyword.ENUM:
+                        return handleEnumDeclaration();
                     case Keyword.VAR:
                         return handleVariableDeclaration();
                     case Keyword.BYTE:
@@ -514,12 +517,127 @@ class Parser
             else
             {
                 error("expected a storage specifier after ':' in constant declaration, but got " ~ getVerboseTokenName(token, text) ~ " instead", scanner.getPosition());
+                if(token != Token.OP_EQ)
+                {
+                    nextToken();
+                }
             }        
         }
         consume(Token.OP_EQ); // =
         value = handleExpr(); // expr
         
         return new ConstantDeclaration(name, value, storage, position);
+    }
+    
+    EnumDeclaration handleEnumDeclaration()
+    {
+        SourcePosition enumPosition = new SourcePosition(scanner.getPosition());
+        
+        SourcePosition constantPosition = enumPosition;
+        string name;
+        Expression value;
+        uint offset;
+        ConstantDeclaration[] constants;
+        StorageType storage = StorageType.WORD;
+        
+        nextToken(); // IDENTIFIER (keyword 'enum')
+        consume(Token.PUNC_COLON); // :
+        
+        // (('byte' | 'word') ':')? IDENTIFIER
+        if(checkIdentifier(true))
+        {
+            switch(keyword)
+            {
+                case Keyword.BYTE:
+                    storage = StorageType.BYTE;
+                    nextToken(); // IDENTIFIER (keyword 'byte')
+                    consume(Token.PUNC_COLON); // :
+                    if(checkIdentifier(true))
+                    {
+                        name = text;
+                    }
+                    constantPosition = new SourcePosition(scanner.getPosition());
+                    nextToken(); // IDENTIFIER
+                    break;
+                case Keyword.WORD:
+                    storage = StorageType.WORD;
+                    nextToken(); // IDENTIFIER (keyword 'word')
+                    consume(Token.PUNC_COLON); // :
+                    if(checkIdentifier(true))
+                    {
+                        name = text;
+                    }
+                    constantPosition = new SourcePosition(scanner.getPosition());
+                    nextToken(); // IDENTIFIER
+                    break;
+                default:
+                    Token lastToken = token;
+                    if(checkIdentifier(true))
+                    {
+                        name = text;
+                    }
+                    constantPosition = new SourcePosition(scanner.getPosition());
+                    nextToken(); // IDENTIFIER
+                    
+                    if(token == Token.PUNC_COLON)
+                    {
+                        error("expected storage specifier, but got " ~ getVerboseTokenName(lastToken, name) ~ ". only 'byte' and 'word' are allowed.", scanner.getPosition());
+                        consume(Token.PUNC_COLON); // :
+                        if(checkIdentifier(true))
+                        {
+                            name = text;
+                        }
+                        constantPosition = new SourcePosition(scanner.getPosition());
+                        nextToken(); // IDENTIFIER
+                    }
+            }
+        }
+        
+        // ('=' expr)?
+        if(token == Token.OP_EQ)
+        {
+            consume(Token.OP_EQ); // =
+            value = handleExpr(); // expr
+        }
+        else
+        {
+            value = new NumericExpression(0, NumericType.INTEGER, constantPosition);
+        }
+        constants ~= new ConstantDeclaration(name, value, offset++, storage, constantPosition);
+        
+        // (',' name ('=' expr)?)*
+        bool more = token == Token.PUNC_COMMA;
+        while(more)
+        {
+            nextToken(); // ,
+            if(token == Token.IDENTIFIER)
+            {
+                if(checkIdentifier())
+                {
+                    name = text;
+                }
+                constantPosition = new SourcePosition(scanner.getPosition());
+                nextToken(); // IDENTIFIER
+                // ('=' expr)?
+                if(token == Token.OP_EQ)
+                {
+                    consume(Token.OP_EQ); // =
+                    value = handleExpr();
+                    offset = 0; // If we explicitly set a value, then we reset the enum expression offset.
+                }
+                
+                constants ~= new ConstantDeclaration(name, value, offset++, storage, constantPosition);
+                // Check if we should match (',' id)*
+                more = token == Token.PUNC_COMMA;
+            }
+            else
+            {
+                error("expected identifier after ',' in enum declaration, but got " ~ getVerboseTokenName(token, text) ~ " instead", scanner.getPosition());
+                more = false;
+            }
+        }
+        
+        return new EnumDeclaration(constants, enumPosition);
     }
     
     VariableDeclaration handleVariableDeclaration()

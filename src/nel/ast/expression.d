@@ -208,12 +208,21 @@ class AttributeExpression : Expression
                         }
                         expansionStack.length = expansionStack.length - 1; // Pop.
                         
-                        foldedValue = expression.getFoldedValue();
+                        // Value of constant is its folded expression value, plus its offset
+                        foldedValue = expression.getFoldedValue() + decl.getExpressionOffset();
                         if(decl.getSize() == StorageType.BYTE && foldedValue > 255)
                         {
                             string message = std.string.format(
-                                "constant '%s' is declared as 'byte'-sized, but has the value %s, which is outside of representable 8-bit range 0..255",
-                                attribute.getFullName(), foldedValue
+                                "%s '%s' is declared as 'byte'-sized, but has the value %s, which is outside of representable 8-bit range 0..255",
+                                expression.getFoldedValue() <= 255 ? "enum constant" : "constant", attribute.getFullName(), foldedValue
+                            );
+                            error(message, getPosition());
+                        }
+                        else if(foldedValue > MAX_VALUE)
+                        {
+                            string message = std.string.format(
+                                "%s '%s' has the value %s, which is outside of representable range 0..65535",
+                                expression.getFoldedValue() <= MAX_VALUE ? "enum constant" : "constant", attribute.getFullName(), foldedValue
                             );
                             error(message, getPosition());
                         }
