@@ -136,7 +136,7 @@ class RuntimeIfStatement : IfStatement
     public:
         this(BranchCondition condition, Statement trueBranch, SourcePosition position)
         {
-            super(IfType.STATIC, trueBranch, position);
+            super(IfType.RUNTIME, trueBranch, position);
             this.condition = condition;
             condition.setNegated(!condition.isNegated()); // Negate for conditional branching to work right.
         }

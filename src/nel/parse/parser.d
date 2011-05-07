@@ -37,9 +37,11 @@ import nel.ast.storage_type;
 import nel.ast.data_statement;
 import nel.ast.block_statement;
 import nel.ast.embed_statement;
+import nel.ast.while_statement;
 import nel.ast.branch_statement;
 import nel.ast.enum_declaration;
 import nel.ast.header_statement;
+import nel.ast.repeat_statement;
 import nel.ast.command_statement;
 import nel.ast.label_declaration;
 import nel.ast.constant_declaration;
@@ -51,6 +53,13 @@ import nel.parse.scanner;
 class Parser
 {
     immutable uint INCLUDE_MAX = 16;
+    
+    enum StatementListType
+    {
+        BLOCK,
+        IF,
+        REPEAT
+    }
     
     Scanner scanner;
     Scanner[] includeStack;
@@ -169,7 +178,7 @@ class Parser
         return new BlockStatement(BlockType.MAIN, statements, position);
     }
     
-    Statement[] handleStatementList(bool ifStatement = false)
+    Statement[] handleStatementList(StatementListType statementListType = StatementListType.BLOCK)
     {
         Statement[] statements;
         while(1)
@@ -179,15 +188,41 @@ class Parser
                 error("expected 'end', but got end-of-file.", scanner.getPosition());
                 return null;
             }
-            if(ifStatement && (keyword == Keyword.END || keyword == Keyword.ELSE || keyword == Keyword.ELSEIF))
+            if(statementListType == StatementListType.IF)
             {
-                // Don't consume the token, but keep it around, so we can check for it in the if statement.
-                return statements;
+                if(keyword == Keyword.END || keyword == Keyword.ELSE || keyword == Keyword.ELSEIF)
+                {
+                    // Don't consume the token, but keep it around, so we can check for it in the if statement.
+                    return statements;
+                }
+                else if(keyword == Keyword.UNTIL)
+                {
+                    error("expected statement, 'else', 'endif', or 'end', but got " ~ getVerboseTokenName(token, text) ~ " instead", scanner.getPosition());
+                }
             }
-            else if(!ifStatement && keyword == Keyword.END)
+            else if(statementListType == StatementListType.REPEAT)
             {
-                nextToken();
-                return statements;
+                if(keyword == Keyword.END || keyword == Keyword.UNTIL)
+                {
+                    // Don't consume the token, but keep it around, so we can check for it in the if statement.
+                    return statements;
+                }
+                else if(keyword == Keyword.ELSE || keyword == Keyword.ELSEIF)
+                {
+                    error("expected statement, 'end', or 'until', but got " ~ getVerboseTokenName(token, text) ~ " instead", scanner.getPosition());
+                }
+            }
+            else if(statementListType == StatementListType.BLOCK)
+            {
+                if(keyword == Keyword.END)
+                {
+                    nextToken();
+                    return statements;
+                }
+                else if(keyword == Keyword.UNTIL || keyword == Keyword.ELSE || keyword == Keyword.ELSEIF)
+                {
+                    error("expected statement or 'end', but got " ~ getVerboseTokenName(token, text) ~ " instead", scanner.getPosition());
+                }
             }
             
             Statement statement = handleStatement();
@@ -237,6 +272,12 @@ class Parser
                         return handleBranchStatement();
                     case Keyword.IF:
                         return handleIfStatement();
+                    case Keyword.WHILE:
+                        return handleWhileStatement();
+                    case Keyword.REPEAT:
+                        return handleRepeatStatement();
+                    case Keyword.ELSE:
+                    case Keyword.ELSEIF:
                     case Keyword.END:
                         // 'end' keyword. Done statement list possibly.
                         return null;
@@ -866,7 +907,7 @@ class Parser
                     nextToken(); // >=
                     break;
                 default:
-                    error("expected flag name directly after " ~ context, scanner.getPosition());
+                    error("expected flag name directly after " ~ context ~ ", but got " ~ getVerboseTokenName(token, text) ~ " instead", scanner.getPosition());
             }
             
             condition = new BranchCondition(negated, new Argument(flag, scanner.getPosition()), scanner.getPosition());
@@ -879,7 +920,7 @@ class Parser
         IfStatement first = null;
         IfStatement statement = null;
         
-        // if (condition|expr) statement* ('elseif' (condition | expr) 'then' statement*)*
+        // 'if' (condition | expr) 'then' statement* ('elseif' (condition | expr) 'then' statement*)*
         do
         {
             SourcePosition position = new SourcePosition(scanner.getPosition());
@@ -939,7 +980,7 @@ class Parser
             nextToken(); // IDENTIFIER (keyword 'then')
             
             // statement*
-            BlockStatement block = new BlockStatement(BlockType.SCOPE, handleStatementList(true), position);
+            BlockStatement block = new BlockStatement(BlockType.SCOPE, handleStatementList(StatementListType.IF), position);
             
             // Construct if statement, which is either static or runtime depending on argument before 'then'.
             IfStatement previous = statement;
@@ -968,7 +1009,7 @@ class Parser
         {
             SourcePosition position = new SourcePosition(scanner.getPosition());
             nextToken(); // IDENTIFIER (keyword 'else')
-            statement.setFalseBranch(new BlockStatement(BlockType.SCOPE, handleStatementList(true), position)); // statement*
+            statement.setFalseBranch(new BlockStatement(BlockType.SCOPE, handleStatementList(StatementListType.IF), position)); // statement*
         }
         switch(keyword)
         {
@@ -987,6 +1028,49 @@ class Parser
         }
         nextToken(); // IDENTIFIER (keyword 'end')
         return first;
+    }
+    
+    WhileStatement handleWhileStatement()
+    {
+        // 'while' condition ('then' | 'do') statement* 'end'
+        SourcePosition position = new SourcePosition(scanner.getPosition());
+        nextToken(); // IDENTIFIER (keyword 'if' / 'elseif')
+        
+        BranchCondition condition = handleBranchCondition("'while'");
+        if(keyword != Keyword.THEN && keyword != Keyword.DO)
+        {
+            error("expected 'then' or 'do', but got " ~ getVerboseTokenName(token, text) ~ " instead", scanner.getPosition());
+        }
+        nextToken(); // IDENTIFIER (keyword 'then'/'do')
+        
+        BlockStatement block = new BlockStatement(BlockType.SCOPE, handleStatementList(), position); // statement*
+
+        return new WhileStatement(condition, block, position);
+    }
+    
+    RepeatStatement handleRepeatStatement()
+    {
+        // 'repeat' statement* 'until' condition
+        SourcePosition position = new SourcePosition(scanner.getPosition());
+        nextToken(); // IDENTIFIER (keyword 'if' / 'elseif')
+        
+        BlockStatement block = new BlockStatement(BlockType.SCOPE, handleStatementList(StatementListType.REPEAT), position); // statement*
+        
+        BranchCondition condition = null;
+        switch(keyword)
+        {
+            case Keyword.END:
+                nextToken(); // IDENTIFIER (keyword 'end')
+                break;
+            case Keyword.UNTIL:
+                nextToken(); // IDENTIFIER (keyword 'until')
+                condition = handleBranchCondition("'until'");
+                break;
+            default:
+                error("expected 'end' or 'until', but got " ~ getVerboseTokenName(token, text) ~ " instead", scanner.getPosition());
+        }
+        
+        return new RepeatStatement(condition, block, position);
     }
     
     CommandStatement handleCommandStatement()

@@ -12,11 +12,10 @@ rom bank 0, 0xC000:
     def load_palette: begin
         a: get #>ppu.PALETTE_BASE, put @ppu.address, get #<ppu.PALETTE_BASE, put @ppu.address
         x: get #0
-        def loop: begin
+        repeat
             a: get @palette[x], put @ppu.data
             x: inc, cmp #(ppu.PALETTE_SIZE * ppu.PALETTE_TOTAL)
-            goto loop when not zero
-        end
+        until zero
         return
     end
     
@@ -31,16 +30,13 @@ rom bank 0, 0xC000:
         a: get #>TILE_ADDRESS, put @ppu.address, get #<TILE_ADDRESS, put @ppu.address
         
         x: get #0
-        def loop: begin
+        a: get @message[x]
+        while not zero do
+            x: inc
+            a: put @ppu.data
             a: get @message[x]
-            if not zero then
-                x: inc
-                a: put @ppu.data
-                goto loop
-            else
-                return
-            end
         end
+        return
     end
 
     def main: begin
@@ -53,14 +49,12 @@ rom bank 0, 0xC000:
         x: get #0, put @ppu.ctrl, put @ppu.mask
         
         // Wait for the PPU to be ready to use, which takes 2 vertical blanks.
-        def wait_for_video_ready: begin
-            def wait_for_vbl: begin
+        repeat
+            repeat
                 a: bit @ppu.status
-                goto wait_for_vbl when not negative
-            end
+            until negative
             x: inc, cmp #2
-            goto wait_for_video_ready when not zero
-        end
+        until =
         
         call load_palette
         call print_text
@@ -69,8 +63,7 @@ rom bank 0, 0xC000:
         a: get #ppu.CTRL_NMI, put @ppu.ctrl
         a: get #(ppu.MASK_LEFTMOST_BG | ppu.MASK_RENDER_BG), put @ppu.mask
 
-        def loop: begin
-            goto loop
+        repeat
         end
     end
     

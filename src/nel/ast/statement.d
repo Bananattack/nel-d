@@ -37,6 +37,8 @@ enum StatementType
     EMBED,                  // A point to embed a binary file. 
     ENUM,                   // An enumeration declaration.
     IF,                     // An if statement.
+    WHILE,                  // A while statement.
+    REPEAT,                 // A repeat statement.
 };
 
 abstract class Statement : Node
