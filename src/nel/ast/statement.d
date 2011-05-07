@@ -36,6 +36,7 @@ enum StatementType
     BRANCH,                 // A branching statement, like goto, call or return. 
     EMBED,                  // A point to embed a binary file. 
     ENUM,                   // An enumeration declaration.
+    IF,                     // An if statement.
 };
 
 abstract class Statement : Node

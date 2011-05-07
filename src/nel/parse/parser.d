@@ -32,6 +32,7 @@ import nel.ast.argument;
 import nel.ast.attribute;
 import nel.ast.statement;
 import nel.ast.expression;
+import nel.ast.if_statement;
 import nel.ast.storage_type;
 import nel.ast.data_statement;
 import nel.ast.block_statement;
@@ -66,6 +67,7 @@ class Parser
     {
         token = scanner.next();
         text = scanner.getLastText();
+        keyword = Keyword.NONE;
         if(token == Token.IDENTIFIER)
         {
             keyword = findKeyword(text);
@@ -167,7 +169,7 @@ class Parser
         return new BlockStatement(BlockType.MAIN, statements, position);
     }
     
-    Statement[] handleStatementList()
+    Statement[] handleStatementList(bool ifStatement = false)
     {
         Statement[] statements;
         while(1)
@@ -177,7 +179,12 @@ class Parser
                 error("expected 'end', but got end-of-file.", scanner.getPosition());
                 return null;
             }
-            if(token == Token.IDENTIFIER && keyword == Keyword.END)
+            if(ifStatement && (keyword == Keyword.END || keyword == Keyword.ELSE || keyword == Keyword.ELSEIF))
+            {
+                // Don't consume the token, but keep it around, so we can check for it in the if statement.
+                return statements;
+            }
+            else if(!ifStatement && keyword == Keyword.END)
             {
                 nextToken();
                 return statements;
@@ -228,6 +235,8 @@ class Parser
                     case Keyword.RESUME:
                     case Keyword.NOP:
                         return handleBranchStatement();
+                    case Keyword.IF:
+                        return handleIfStatement();
                     case Keyword.END:
                         // 'end' keyword. Done statement list possibly.
                         return null;
@@ -389,7 +398,7 @@ class Parser
             case Keyword.ROM:
                 nextToken(); // IDENTIFIER (keyword 'rom')
                 // rom bank expr
-                if(token == Token.IDENTIFIER && keyword == Keyword.BANK)
+                if(keyword == Keyword.BANK)
                 {
                     nextToken(); // IDENTIFIER (keyword 'bank')
                     Expression bank = handleExpr(); // expr
@@ -414,7 +423,7 @@ class Parser
                 nextToken(); // IDENTIFIER (keyword 'ram')
                 
                 // rom doesn't have banks, read the input but raise an error.
-                if(token == Token.IDENTIFIER && keyword == Keyword.BANK)
+                if(keyword == Keyword.BANK)
                 {
                     error("'ram' statement found with 'bank' keyword, but ram does not allow banking. did you mean to write 'rom'?", scanner.getPosition());
                     
@@ -789,61 +798,7 @@ class Parser
                         error("'when' clause is not allowed on indirect 'goto'", scanner.getPosition());
                     }
                     nextToken(); // IDENTIFIER (keyword 'when')
-                    
-                    // 'not'* (not isn't a keyword, but it has special meaning)
-                    bool negated = false;
-                    while(token == Token.IDENTIFIER && text == "not")
-                    {
-                        nextToken(); // IDENTIFIER ('not')
-                        negated = !negated;
-                    }
-                    
-                    if(token == Token.IDENTIFIER && checkIdentifier())
-                    {
-                        ArgumentType flag = findBuiltinFlag(text);
-                        if(flag == ArgumentType.NONE)
-                        {
-                            error("unrecognized flag name '" ~ text ~ "' in 'when' clause", scanner.getPosition());
-                        }
-                        condition = new BranchCondition(negated, new Argument(flag, scanner.getPosition()), scanner.getPosition());
-                        nextToken(); // IDENTIFIER
-                    }
-                    else
-                    {
-                        ArgumentType flag = ArgumentType.NONE;
-                        // when ... <> is same as when ... not zero
-                        if(token == Token.OP_NE)
-                        {
-                            negated = !negated;
-                            flag = ArgumentType.ZERO;
-                            nextToken(); // <>
-                        }
-                        // when ... = is same as when ... zero
-                        else if(token == Token.OP_EQ)
-                        {
-                            flag = ArgumentType.ZERO;
-                            nextToken(); // =
-                        }
-                        // when ... < is same as when ... not carry
-                        else if(token == Token.OP_LT)
-                        {
-                            negated = !negated;
-                            flag = ArgumentType.CARRY;
-                            nextToken(); // <
-                        }
-                        // when ... >= is same as when ... carry
-                        else if(token == Token.OP_GE)
-                        {
-                            flag = ArgumentType.CARRY;
-                            nextToken(); // >=
-                        }
-                        else
-                        {
-                            error("expected flag name after 'when'", scanner.getPosition());
-                        }
-                        
-                        condition = new BranchCondition(negated, new Argument(flag, scanner.getPosition()), scanner.getPosition());
-                    }
+                    condition = handleBranchCondition("'when'");
                 }
                 return new BranchStatement(BranchType.GOTO, destination, condition, position);
             case Keyword.CALL:
@@ -862,7 +817,178 @@ class Parser
                 return new BranchStatement(BranchType.NOP, position);
         }
     }
+    
+    BranchCondition handleBranchCondition(string context)
+    {
+        BranchCondition condition = null;
+        
+        // 'not'* (not isn't a keyword, but it has special meaning)
+        bool negated = false;
+        while(keyword == Keyword.NOT)
+        {
+            nextToken(); // IDENTIFIER (keyword 'not')
+            negated = !negated;
+        }
+        
+        if(token == Token.IDENTIFIER && checkIdentifier())
+        {
+            ArgumentType flag = findBuiltinFlag(text);
+            if(flag == ArgumentType.NONE)
+            {
+                error("unrecognized flag name '" ~ text ~ "' directly after " ~ context, scanner.getPosition());
+            }
+            condition = new BranchCondition(negated, new Argument(flag, scanner.getPosition()), scanner.getPosition());
+            nextToken(); // IDENTIFIER
+        }
+        else
+        {
+            ArgumentType flag = ArgumentType.NONE;
+            switch(token)
+            {
+                case Token.OP_NE:
+                    // when ... <> is same as when ... not zero
+                    negated = !negated;
+                    flag = ArgumentType.ZERO;
+                    nextToken(); // <>
+                    break;
+                case Token.OP_EQ:
+                    // when ... = is same as when ... zero
+                    flag = ArgumentType.ZERO;
+                    nextToken(); // =
+                    break;
+                case Token.OP_LT:
+                    negated = !negated;
+                    flag = ArgumentType.CARRY;
+                    nextToken(); // <
+                    break;
+                case Token.OP_GE:
+                    flag = ArgumentType.CARRY;
+                    nextToken(); // >=
+                    break;
+                default:
+                    error("expected flag name directly after " ~ context, scanner.getPosition());
+            }
+            
+            condition = new BranchCondition(negated, new Argument(flag, scanner.getPosition()), scanner.getPosition());
+        }
+        return condition;
+    }
+    
+    IfStatement handleIfStatement()
+    {
+        IfStatement first = null;
+        IfStatement statement = null;
+        
+        // if (condition|expr) statement* ('elseif' (condition | expr) 'then' statement*)*
+        do
+        {
+            SourcePosition position = new SourcePosition(scanner.getPosition());
+            nextToken(); // IDENTIFIER (keyword 'if' / 'elseif')
+            
+            Expression expression = null;
+            BranchCondition condition = null;
+            
+            // condition | expr
+            switch(token)
+            {
+                case Token.IDENTIFIER:
+                    // if the token is not a flag or expression, error.
+                    ArgumentType flag = findBuiltinFlag(text);
+                    
+                    if(flag != ArgumentType.NONE || keyword == Keyword.NOT)
+                    {
+                        condition = handleBranchCondition("'if'"); // condition
+                    }
+                    else
+                    {
+                        expression = handleExpr(); // expr
+                    }
+                    break;
+                case Token.OP_LT:
+                    // Uh oh. '<' could be a condition, or a byte-masking unary operator depending on the following tokens!
+                    SourcePosition expressionPosition = new SourcePosition(scanner.getPosition());
+                    
+                    condition = new BranchCondition(true, new Argument(ArgumentType.CARRY, scanner.getPosition()), scanner.getPosition());
+                    nextToken(); // <
+                    // If the next token isn't 'then', we should treat it as an operand of the byte-masking op <, and not as less-than / 'carry'
+                    if(keyword != Keyword.THEN)
+                    {   
+                        condition = null;
+                        expression = new UnaryOperatorExpression(UnaryOperatorType.BYTE_LOW, handleTerm(), expressionPosition); // term
+                    }
+                    break;
+                case Token.OP_GE:
+                case Token.OP_NE:
+                case Token.OP_EQ:
+                    condition = handleBranchCondition("'if'"); // condition
+                    break;
+                case Token.PUNC_LPAREN:
+                case Token.OP_GT:
+                case Token.PUNC_EXCLAIM:
+                case Token.INTEGER:
+                case Token.HEXADECIMAL:
+                case Token.BINARY:
+                    expression = handleExpr(); // expr
+                    break;
+            }
+            
+            if(keyword != Keyword.THEN)
+            {
+                error("expected 'then', but got " ~ getVerboseTokenName(token, text) ~ " instead", scanner.getPosition());
+            }
+            nextToken(); // IDENTIFIER (keyword 'then')
+            
+            // statement*
+            BlockStatement block = new BlockStatement(BlockType.SCOPE, handleStatementList(true), position);
+            
+            // Construct if statement, which is either static or runtime depending on argument before 'then'.
+            IfStatement previous = statement;
+            if(expression !is null)
+            {
+                statement = new StaticIfStatement(expression, block, position);
+            }
+            else if(condition !is null)
+            {
+                statement = new RuntimeIfStatement(condition, block, position);
+            }
 
+            // If this is an 'elseif', join to previous 'if'/'elseif'.
+            if(previous !is null)
+            {
+                previous.setFalseBranch(statement);
+            }
+            else if(first is null)
+            {
+                first = statement;
+            }
+        } while(keyword == Keyword.ELSEIF);
+        
+        // ('else' statement*)? 'end' (with error recovery for invalid else/elseif placements)
+        if(keyword == Keyword.ELSE)
+        {
+            SourcePosition position = new SourcePosition(scanner.getPosition());
+            nextToken(); // IDENTIFIER (keyword 'else')
+            statement.setFalseBranch(new BlockStatement(BlockType.SCOPE, handleStatementList(true), position)); // statement*
+        }
+        switch(keyword)
+        {
+            case Keyword.ELSE:
+                error("duplicate 'else' clause found.", scanner.getPosition());
+                break;
+            case Keyword.ELSEIF:
+                // Seeing as we loop on elseif before an else/end, this must be an illegal use of elseif.
+                error("'elseif' can't appear after 'else' clause.", scanner.getPosition());
+                break;
+            default:
+        }
+        if(keyword != Keyword.END)
+        {
+            error("expected 'end', but got " ~ getVerboseTokenName(token, text) ~ " instead", scanner.getPosition());
+        }
+        nextToken(); // IDENTIFIER (keyword 'end')
+        return first;
+    }
+    
     CommandStatement handleCommandStatement()
     {
         string receiverName = "";
@@ -879,7 +1005,7 @@ class Parser
                 flag = findBuiltinFlag(text);
                 receiverName = text;
                 
-                if(register != ArgumentType.NONE || flag != ArgumentType.NONE)
+                if(register != ArgumentType.NONE)
                 {
                     receiver = handleArgument(); // arg
                 }

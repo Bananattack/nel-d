@@ -199,4 +199,9 @@ class BranchCondition : Node
             return negated;
         }
         
+        void setNegated(bool negated)
+        {
+            this.negated = negated;
+        }
+        
 }

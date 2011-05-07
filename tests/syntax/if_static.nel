@@ -1,0 +1,18 @@
+// Valid header, were the rest to compile
+ines:
+    mapper = 0,
+    prg = 1,
+    chr = 1
+    
+rom bank 0, 0xE000:
+    if 0 then
+        a: get @truth
+    else
+        a: get @falsehood // error because falsehood isn't defined. But notice that it only evaluated this branch!
+    end
+    
+    if 1 then
+        a: get @truth // error because truth isn't defined. But notice that it only evaluated this branch!
+    else
+        a: get @falsehood
+    end

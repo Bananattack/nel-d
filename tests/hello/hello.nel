@@ -33,13 +33,14 @@ rom bank 0, 0xC000:
         x: get #0
         def loop: begin
             a: get @message[x]
-            goto done when zero
-            x: inc
-            a: put @ppu.data
-            goto loop
+            if not zero then
+                x: inc
+                a: put @ppu.data
+                goto loop
+            else
+                return
+            end
         end
-        def done:
-            return
     end
 
     def main: begin
