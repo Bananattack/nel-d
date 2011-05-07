@@ -2,3 +2,4 @@ nel
 nel.exe
 nel.obj
 nel.map
+tests/*/*/*.nes

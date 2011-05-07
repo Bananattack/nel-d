@@ -7,7 +7,7 @@ ram 0x00:
     var t0, t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15: byte
     
 rom bank 0, 0xC000:
-    include 'hardware.nel'
+    include '../../common/hardware.nel'
 
     def load_palette: begin
         a: get #>ppu.PALETTE_BASE, put @ppu.address, get #<ppu.PALETTE_BASE, put @ppu.address
@@ -102,5 +102,5 @@ rom 0xFFFA:
     word: draw, main, scan
     
 rom bank 2, 0x0000:
-    embed 'hello_tiles.chr'
-    embed 'hello_tiles.chr' // Pad the other 4K with the same image.
+    embed '../../common/hello_tiles.chr'
+    embed '../../common/hello_tiles.chr' // Pad the other 4K with the same image.

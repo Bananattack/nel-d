@@ -1,0 +1,180 @@
+package tilemap
+    // Loads a map. Make sure that rendering is off when doing this.
+    def load: begin
+        // Locals
+        let ptr_lo = t0
+        let ptr_hi = t1
+        let ptr = ptr_lo
+        let column = t2
+        let src_lo = t3
+        let src_hi = t4
+        let src = src_lo
+        let combined_attr = t5
+        
+        let TILE_ADDRESS = ppu.NAMETABLE_BASE
+        let ATTR_ADDRESS = (ppu.NAMETABLE_BASE + ppu.NAMETABLE_ATTRIBUTE)
+        
+        // Setup the source pointer.
+        a: get #(map_buffer & 0xFF), put @src_lo, get #(map_buffer >> 8), put @src_hi
+        // Read PPU status to reset its state.
+        a: get @ppu.status
+        // Now setup the PPU for copying tiles.
+        a: get #(TILE_ADDRESS >> 8), put @ppu.address, get #(TILE_ADDRESS & 0xFF), put @ppu.address
+        // Initialize the loop counter x, and also init the tileset pointer.
+        x: get #0, put @ptr_lo, get @map_tileset_ptr, put @ptr_hi
+        repeat
+            y: get #0
+            // Move the pointer to the top-right tiles.
+            @ptr_hi: inc
+            
+            // Copy top.
+            repeat
+                // Save the column
+                y: put @column
+                // Get the metatile index for this column, and put it into y.
+                a: get @[src][y], put y
+                // Move the pointer back to the top-left tiles.
+                @ptr_hi: dec
+                a: get @[ptr][y], put @ppu.data
+                // Move ptr to the top-right tiles.
+                @ptr_hi: inc
+                a: get @[ptr][y], put @ppu.data
+                // Get the column back, and increment.
+                // If we've done this 16 times, stop -- we've finished the row.
+                y: get @column, inc, cmp #16
+            until zero
+            
+            y: get #0
+            // Move ptr to bottom-left.
+            @ptr_hi: inc, inc
+            // Copy bottom. See column_top_loop for the gist of things.
+            repeat
+                y: put @column
+                a: get @[src][y], put y
+                @ptr_hi: dec
+                a: get @[ptr][y], put @ppu.data
+                @ptr_hi: inc
+                a: get @[ptr][y], put @ppu.data
+                y: get @column, inc, cmp #16
+            until zero
+            
+            // Advance the source by one row.
+            a: get @src, add #16, put @src
+            // Move ptr back to top-left again.
+            a: get @ptr_hi, sub #3, put @ptr_hi
+            // Repeat until 15 rows have been copied.
+            x: inc, cmp #15
+        until zero
+
+        // Read PPU status to reset its state.
+        a: get @ppu.status
+        // Now setup the PPU for copying attributes.
+        a: get #(ATTR_ADDRESS >> 8), put @ppu.address, get #(ATTR_ADDRESS & 0xFF), put @ppu.address
+        // Setup the source pointer, advanced by one row.
+        a: get #(map_buffer & 0xFF), add #16, put @src_lo, get #(map_buffer >> 8), put @src_hi
+        // Set the pointer to attributes.
+        a: get @ptr_hi, add #4, put @ptr_hi
+        // Initialize the row counter x.
+        x: get #0
+        
+        repeat
+            y: get #0
+            repeat
+                // Save the column
+                y: put @column
+                // Decrease the source by one row.
+                a: get @src, sub #16, put @src
+                // Get the metatile index for this column, and put it into y.
+                a: get @[src][y], put y
+                // Get the attribute for this column.
+                // xxxxxxAA -> 000000AA
+                a: get @[ptr][y], and #3
+                // Save attribute.
+                a: put @combined_attr
+                
+                // Get the column back.
+                y: get @column, inc
+                // Get the metatile index for this column, and put it into y.
+                a: get @[src][y], put y
+                // Get the attribute for this column and combine with the existing attribute.
+                // xxxxxxBB -> 0000BBAA
+                a: get @[ptr][y], and #3, shl, shl, or @combined_attr
+                // Save combined attribute.
+                a: put @combined_attr
+                
+                // Advance the source by one row.
+                a: get @src, add #16, put @src
+                
+                // Get the column back.
+                y: get @column
+                // Get the metatile index for this column, and put it into y.
+                a: get @[src][y], put y
+                // Get the attribute for this column and combine with the existing attribute.
+                // xxxxxxCC -> 00CCBBAA
+                a: get @[ptr][y], and #3, shl, shl, shl, shl, or @combined_attr
+                // Save combined attribute.
+                a: put @combined_attr
+                
+                // Get the column back.
+                y: get @column, inc
+                // Get the metatile index for this column, and put it into y.
+                a: get @[src][y], put y
+                // Get the attribute for this column and combine with the existing attribute.
+                // xxxxxxDD -> 000000DD
+                a: get @[ptr][y], and #3
+                // Rotate 3 times, because rotation is 9-bit due using the carry.
+                // Unset carry, so that the first bit is 0.
+                // c:0 000000D -> c:0 DD000000
+                p: unset carry
+                a: ror, ror, ror
+                // DD000000 -> DDCCBBAA
+                a: or @combined_attr
+                // Write to PPU.
+                a: put @ppu.data
+                
+                // Get the column back, increment, and check if we've done 16 columns yet.
+                y: get @column, inc, inc, cmp #16
+                // If we have remaining columns, repeat
+            until zero
+            
+            // Advance the source by two rows.
+            a: get @src, add #32, put @src
+            // Increment the row counter.
+            x: inc, cmp #7
+            // If we have no remaining rows, we're done.
+        until zero
+        
+        begin
+            y: get #0
+            // Decrease the source by one row.
+            a: get @src, sub #16, put @src
+            repeat
+                // Save the column
+                y: put @column
+                // Get the metatile index for this column, and put it into y.
+                a: get @[src][y], put y
+                // Get the attribute for this column.
+                // xxxxxxAA -> 000000AA
+                a: get @[ptr][y], and #3
+                // Save attribute.
+                a: put @combined_attr
+                
+                // Get the column back.
+                y: get @column, inc
+                // Get the metatile index for this column, and put it into y.
+                a: get @[src][y], put y
+                // Get the attribute for this column and combine with the existing attribute.
+                // xxxxxxBB -> 0000BBAA
+                a: get @[ptr][y], and #3, shl, shl, or @combined_attr
+                // Write to PPU.
+                a: put @ppu.data
+                
+                // Get the column back, increment, and check if we've done 16 columns yet.
+                y: get @column, inc, inc, cmp #16
+                // If we have remaining columns, repeat
+            until zero
+        end
+        
+        return
+    end
+end

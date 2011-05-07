@@ -1,8 +1,9 @@
 #!/bin/env python
 import os
+import os.path
 import PIL.Image
 
-def writeCHR(w, h, data, f):
+def write_chr(w, h, data, f):
     for y in range(0, h, 8):
         for x in range(0, w, 8):
             # Copy low bits of each 8x8 chunk into the first 8x8 plane.
@@ -28,8 +29,13 @@ if __name__ == '__main__':
                     
                     try:
                         img = PIL.Image.open(filename)
-                    except Exception as e:
-                        exit('Failure attempting to load ' + filename)
+                    except IOError as e:
+                        if os.path.isdir(filename):
+                            exit(filename + ' is a directory.')
+                        if os.path.exists(filename):
+                            exit(filename + ' has an unsupported filetype, or you lack permission to open it.')
+                        else:
+                            exit('File ' + filename + ' does not exist!')
                         
                     w, h = img.size
                     if w != 128 or h != 128:
@@ -38,21 +44,15 @@ if __name__ == '__main__':
                         exit('Image ' + filename + ' has no palette.')
                     data = img.load()
                     
-                    output = ''
-                    #for y in range(h):
-                    #    for x in range(w):
-                    #        if data[x, y] < 0 or data[x, y] >= 4:
-                    #            exit('Image uses colors outside of the first 4 palette entries.')
-
-                    try:            
-                        f = open(os.path.splitext(filename)[0] + '.chr', 'wb')
+                    save_filename = os.path.splitext(filename)[0] + '.chr'
+                    try:
+                        f = open(save_filename, 'wb')
                     except Exception as e:
-                        exit('Failure attempting to write ' + os.path.splitext(filename)[0] + '.chr')
+                        exit('Failure attempting to write ' + save_filename)
                     
-                    writeCHR(w, h, data, f)
+                    write_chr(w, h, data, f)
                     f.close()
-                                
-                print(sys.argv[0] + ': Done!')
+                    print('  ' + filename + ' -> ' + save_filename)
         else:
             print('Usage: ' + sys.argv[0] + ' file [file...]')
             print('Converts files like foo.png into NES-friendly formats like foo.chr')
