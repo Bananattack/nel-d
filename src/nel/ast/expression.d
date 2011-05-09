@@ -237,6 +237,14 @@ class AttributeExpression : Expression
                         folded = label.isKnownOffset();
                         foldedValue = label.getOffset();
                         break;
+                    case DefinitionType.PACKAGE:
+                        string message = std.string.format(
+                            "attempted to use package '%s' in an expression. packages have no values, use their members instead.", attribute.getFullName()
+                        );
+                        error(message, getPosition());
+                        foldedValue = 0xFACEBEEF;
+                        folded = false;
+                        break;
                 }
             }
             

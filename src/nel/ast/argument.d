@@ -186,7 +186,7 @@ class Argument : Node
                     {
                         error(
                             std.string.format(
-                                "relative jump is outside of range -127..128 bytes. "
+                                "relative jump is outside of range -128..127 bytes. "
                                 ~ "rewrite the branch or shorten the gaps in your code. "
                                 ~ "(pc = %s, dest = %s, pc - dest = %s)",
                                 bank.getProgramCounter(), expression.getFoldedValue(), offset

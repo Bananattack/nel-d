@@ -1,27 +1,37 @@
 package tilemap
-    // Loads a map. Make sure that rendering is off when doing this.
+    // Turns off rendering and loads a map.
     def load: begin
-        // Locals
+        // Argument: Tileset Pointer. Should be page-aligned (low byte of 0x00), and pointing to the top-left page of the tileset.
         let ptr_lo = t0
         let ptr_hi = t1
         let ptr = ptr_lo
-        let column = t2
-        let src_lo = t3
-        let src_hi = t4
+        // Argument: Map Source Pointer.
+        let map_lo = t2
+        let map_hi = t3
+        let map = map_lo
+        // Argument: Nametable index 0..3
+        let nametable_index = t4
+        // Local: Current Map Source Pointer.
+        let src_lo = t5
+        let src_hi = t6
         let src = src_lo
-        let combined_attr = t5
-        
+        // Local: Current Column.
+        let column = t7
+        // Local: Combined Tile Attributes.
+        let combined_attr = t8
         let TILE_ADDRESS = ppu.NAMETABLE_BASE
         let ATTR_ADDRESS = (ppu.NAMETABLE_BASE + ppu.NAMETABLE_ATTRIBUTE)
         
-        // Setup the source pointer.
-        a: get #(map_buffer & 0xFF), put @src_lo, get #(map_buffer >> 8), put @src_hi
+        // Turn off the PPU.
+        a: get #0, put @ppu.ctrl, put @ppu.mask
         // Read PPU status to reset its state.
         a: get @ppu.status
         // Now setup the PPU for copying tiles.
-        a: get #(TILE_ADDRESS >> 8), put @ppu.address, get #(TILE_ADDRESS & 0xFF), put @ppu.address
-        // Initialize the loop counter x, and also init the tileset pointer.
-        x: get #0, put @ptr_lo, get @map_tileset_ptr, put @ptr_hi
+        a: get @nametable_index, shl, shl, add #>TILE_ADDRESS, put @ppu.address, get #<TILE_ADDRESS, put @ppu.address
+        // Setup the source pointer.
+        a: get @map_lo, put @src_lo, get @map_hi, put @src_hi
+        // Initialize the loop counter.
+        x: get #0
         repeat
             y: get #0
             // Move the pointer to the top-right tiles.
@@ -45,7 +55,7 @@ package tilemap
             until zero
             
             y: get #0
-            // Move ptr to bottom-left.
+            // Move ptr to bottom-right.
             @ptr_hi: inc, inc
             // Copy bottom. See column_top_loop for the gist of things.
             repeat
@@ -69,9 +79,9 @@ package tilemap
         // Read PPU status to reset its state.
         a: get @ppu.status
         // Now setup the PPU for copying attributes.
-        a: get #(ATTR_ADDRESS >> 8), put @ppu.address, get #(ATTR_ADDRESS & 0xFF), put @ppu.address
+        a: get @nametable_index, shl, shl, add #>ATTR_ADDRESS, put @ppu.address, get #<ATTR_ADDRESS, put @ppu.address
         // Setup the source pointer, advanced by one row.
-        a: get #(map_buffer & 0xFF), add #16, put @src_lo, get #(map_buffer >> 8), put @src_hi
+        a: get @map_lo, add #16, put @src_lo, get @map_hi, put @src_hi
         // Set the pointer to attributes.
         a: get @ptr_hi, add #4, put @ptr_hi
         // Initialize the row counter x.
@@ -144,36 +154,279 @@ package tilemap
             // If we have no remaining rows, we're done.
         until zero
         
-        begin
+        y: get #0
+        // Decrease the source by one row.
+        a: get @src, sub #16, put @src
+        repeat
+            // Save the column
+            y: put @column
+            // Get the metatile index for this column, and put it into y.
+            a: get @[src][y], put y
+            // Get the attribute for this column.
+            // xxxxxxAA -> 000000AA
+            a: get @[ptr][y], and #3
+            // Save attribute.
+            a: put @combined_attr
+            
+            // Get the column back.
+            y: get @column, inc
+            // Get the metatile index for this column, and put it into y.
+            a: get @[src][y], put y
+            // Get the attribute for this column and combine with the existing attribute.
+            // xxxxxxBB -> 0000BBAA
+            a: get @[ptr][y], and #3, shl, shl, or @combined_attr
+            // Write to PPU.
+            a: put @ppu.data
+            
+            // Get the column back, increment, and check if we've done 16 columns yet.
+            y: get @column, inc, inc, cmp #16
+            // If we have remaining columns, repeat
+        until zero
+        
+        return
+    end
+    
+    
+
+    // Loads in a tile column of the map for scrolling.
+    def update_tile_buffer: begin
+        // Argument: Tileset pointer. Should be page-aligned (low byte of 0x00), and pointing to the top-left page of the tileset.
+        let ptr_lo = t0
+        let ptr_hi = t1
+        let ptr = ptr_lo
+        // Argument: Map source pointer.
+        let map_lo = t2
+        let map_hi = t3
+        let map = map_lo
+        // Argument: Current column.
+        let column = t4
+        // Argument: Destination pointer
+        let dest_lo = t5
+        let dest_hi = t6
+        let dest = dest_lo
+        // Local: Current tile from source.
+        let tile = t7
+
+        // Initialize the row counter.
+        x: get #0
+        repeat
+            y: get @column
+            a: get @[map][y], put @tile, put y
+            
+            // Copy top-left tile
+            a: get @[ptr][y]
             y: get #0
-            // Decrease the source by one row.
-            a: get @src, sub #16, put @src
-            repeat
-                // Save the column
-                y: put @column
-                // Get the metatile index for this column, and put it into y.
-                a: get @[src][y], put y
-                // Get the attribute for this column.
-                // xxxxxxAA -> 000000AA
-                a: get @[ptr][y], and #3
-                // Save attribute.
-                a: put @combined_attr
-                
-                // Get the column back.
-                y: get @column, inc
-                // Get the metatile index for this column, and put it into y.
-                a: get @[src][y], put y
-                // Get the attribute for this column and combine with the existing attribute.
-                // xxxxxxBB -> 0000BBAA
-                a: get @[ptr][y], and #3, shl, shl, or @combined_attr
-                // Write to PPU.
-                a: put @ppu.data
-                
-                // Get the column back, increment, and check if we've done 16 columns yet.
-                y: get @column, inc, inc, cmp #16
-                // If we have remaining columns, repeat
-            until zero
+            a: put @[dest][y]
+            @dest: inc
+            @ptr_hi: inc
+            
+            // Copy top-right tile
+            y: get @tile
+            a: get @[ptr][y]
+            y: get #0
+            a: put @[dest][y]
+            @dest: inc
+            @ptr_hi: inc
+            
+            // Copy bottom-left tile
+            y: get @tile
+            a: get @[ptr][y]
+            y: get #0
+            a: put @[dest][y]
+            @dest: inc
+            @ptr_hi: inc
+            
+            // Copy bottom-right tile
+            y: get @tile
+            a: get @[ptr][y]
+            y: get #0
+            a: put @[dest][y]
+            @dest: inc
+            
+            // Move ptr back to top-left again.
+            a: get @ptr_hi, sub #3, put @ptr_hi
+            // Advance the source by one row.
+            a: get @map, add #16, put @map
+            // Repeat until 15 rows have been copied.
+            x: inc, cmp #15
+        until zero
+        
+        return
+    end
+    
+    
+    
+    // Loads in an attribute column of the map for scrolling.
+    def update_attribute_buffer: begin
+        // Argument: Tileset pointer. Should be page-aligned (low byte of 0x00), and pointing to the attribute page of the tileset.
+        let ptr_lo = t0
+        let ptr_hi = t1
+        let ptr = ptr_lo
+        // Argument: Map source pointer.
+        let map_lo = t2
+        let map_hi = t3
+        let map = map_lo
+        // Argument: Current column.
+        let column = t4
+        // Argument: Destination pointer
+        let dest_lo = t5
+        let dest_hi = t6
+        let dest = dest_lo
+        // Local: Current tile from source.
+        let combined_attr = t7
+
+        // Initialize the row counter.
+        x: get #0
+        repeat
+            // Get the column
+            y: get @column
+            // Get the metatile index for this column, and put it into y.
+            a: get @[map][y], put y
+            // Get the attribute for this column.
+            // xxxxxxAA -> 000000AA
+            a: get @[ptr][y], and #3
+            // Save attribute.
+            a: put @combined_attr
+            
+            // Get the column back.
+            y: get @column, inc
+            // Get the metatile index for this column, and put it into y.
+            a: get @[map][y], put y
+            // Get the attribute for this column and combine with the existing attribute.
+            // xxxxxxBB -> 0000BBAA
+            a: get @[ptr][y], and #3, shl, shl, or @combined_attr
+            // Save combined attribute.
+            a: put @combined_attr
+            
+            // Advance the source by one row.
+            a: get @map, add #16, put @map
+            
+            // Get the column back.
+            y: get @column
+            // Get the metatile index for this column, and put it into y.
+            a: get @[map][y], put y
+            // Get the attribute for this column and combine with the existing attribute.
+            // xxxxxxCC -> 00CCBBAA
+            a: get @[ptr][y], and #3, shl, shl, shl, shl, or @combined_attr
+            // Save combined attribute.
+            a: put @combined_attr
+            
+            // Get the column back.
+            y: get @column, inc
+            // Get the metatile index for this column, and put it into y.
+            a: get @[map][y], put y
+            // Get the attribute for this column and combine with the existing attribute.
+            // xxxxxxDD -> 000000DD
+            a: get @[ptr][y], and #3
+            // Rotate 3 times, because rotation is 9-bit due using the carry.
+            // Unset carry, so that the first bit is 0.
+            // c:0 000000D -> c:0 DD000000
+            p: unset carry
+            a: ror, ror, ror
+            // DD000000 -> DDCCBBAA
+            a: or @combined_attr
+            
+            // Write to destination.
+            y: get #0
+            a: put @[dest][y]
+            @dest: inc
+            
+            // Advance the source by one row.
+            a: get @map, add #16, put @map
+            // Increment the row counter.
+            x: inc, cmp #7
+            // If we have no remaining rows, we're done.
+        until zero
+
+        // Get the column
+        y: get @column
+        // Get the metatile index for this column, and put it into y.
+        a: get @[map][y], put y
+        // Get the attribute for this column.
+        // xxxxxxAA -> 000000AA
+        a: get @[ptr][y], and #3
+        // Save attribute.
+        a: put @combined_attr
+        
+        // Get the column back.
+        y: get @column, inc
+        // Get the metatile index for this column, and put it into y.
+        a: get @[map][y], put y
+        // Get the attribute for this column and combine with the existing attribute.
+        // xxxxxxBB -> 0000BBAA
+        a: get @[ptr][y], and #3, shl, shl, or @combined_attr
+        
+        // Write to destination.
+        y: get #0
+        a: put @[dest][y]
+        
+        return
+    end
+    
+    
+    
+    // Draws a scroll buffer's tiles offscreen. Should be called during NMI.
+    def draw_tile_buffer: begin
+        // Argument: 16-bit camera position
+        let camera_x_lo = t0
+        let camera_x_hi = t1
+        // Argument: The buffer to copy from.
+        let src_lo = t2
+        let src_hi = t3
+        let src = src_lo
+        // Argument: The direction to move.
+        let direction = t4
+        
+        a: get @camera_x_lo, shr, shr, shr, put @camera_x_lo
+        
+        // Check if this is an even or odd column.
+        a: and #1
+        if not zero then
+            @src: inc
         end
+        
+        a: get @camera_x_hi, and #1, xor #1, shl, shl, add #0x20, put @camera_x_hi
+        
+        a: get #ppu.CTRL_VRAM_STEP_Y, put @ppu.ctrl
+        a: get @ppu.status
+        a: get @camera_x_hi, put @ppu.address, get @camera_x_lo, put @ppu.address
+        
+        y: get #0
+        repeat
+            a: get @[src][y], put @ppu.data
+            y: inc, inc, cmp #60
+        until >=
+        
+        return
+    end
+    
+    
+    
+    // Draws a scroll buffer's attributes offscreen. Should be called during NMI.
+    def draw_attribute_buffer: begin
+        // Argument: 16-bit camera position
+        let camera_x_lo = t0
+        let camera_x_hi = t1
+        // Argument: The buffer to copy from.
+        let src_lo = t2
+        let src_hi = t3
+        let src = src_lo
+        // Argument: The direction to move.
+        let direction = t4
+        
+        a: get @direction
+        a: get @camera_x_lo, shr, shr, shr, shr, shr, add #0xC0, put @camera_x_lo
+        a: get @camera_x_hi, and #1, xor #1, shl, shl, add #0x23, put @camera_x_hi
+        
+        a: get @ppu.status
+        
+        y: get #0
+        repeat
+            a: get @camera_x_hi, put @ppu.address, get @camera_x_lo, put @ppu.address
+            a: get @[src][y], put @ppu.data
+            a: get @camera_x_lo, add #8, put @camera_x_lo
+            y: inc, cmp #8
+        until =
         
         return
     end
