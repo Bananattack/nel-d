@@ -377,15 +377,21 @@ package tilemap
         // Argument: The direction to move.
         let direction = t4
         
-        a: get @camera_x_lo, shr, shr, shr, put @camera_x_lo
+        a: get @direction
+        if zero then
+            a: get @camera_x_hi, and #1, xor #1
+        else
+            a: get @camera_x_hi, and #1
+        end
+        a: shl, shl, add #0x20, put @camera_x_hi
         
+        a: get @camera_x_lo, shr, shr, shr, put @camera_x_lo
+    
         // Check if this is an even or odd column.
         a: and #1
         if not zero then
             @src: inc
         end
-        
-        a: get @camera_x_hi, and #1, xor #1, shl, shl, add #0x20, put @camera_x_hi
         
         a: get #ppu.CTRL_VRAM_STEP_Y, put @ppu.ctrl
         a: get @ppu.status
@@ -415,8 +421,14 @@ package tilemap
         let direction = t4
         
         a: get @direction
+        if zero then
+            a: get @camera_x_hi, and #1, xor #1
+        else
+            a: get @camera_x_hi, and #1
+        end
+        a: shl, shl, add #0x23, put @camera_x_hi
+        
         a: get @camera_x_lo, shr, shr, shr, shr, shr, add #0xC0, put @camera_x_lo
-        a: get @camera_x_hi, and #1, xor #1, shl, shl, add #0x23, put @camera_x_hi
         
         a: get @ppu.status
         
