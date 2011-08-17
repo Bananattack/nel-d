@@ -109,7 +109,7 @@ class DataItem : Node
             return dataType;
         }
         
-        abstract uint calculateSize();
+        abstract ulong calculateSize();
         abstract void write(RomBank bank, StorageType storageType);
 }
 
@@ -125,7 +125,7 @@ class NumericDataItem : DataItem
             this.expression = expression;
         }
         
-        uint calculateSize()
+        ulong calculateSize()
         {
             expression.fold(false, true);
             return 1;
@@ -161,7 +161,7 @@ class StringDataItem : DataItem
             this.value = value;
         }
 
-        uint calculateSize()
+        ulong calculateSize()
         {
             return value.length;
         }
