@@ -45,9 +45,14 @@ class SourceFile
             return filename;
         }
     
-        string toString(bool verbose = false)
+        string getVerboseText()
         {
-            return filename ~ (verbose && includePoint !is null ? " (included at " ~ includePoint.toString() ~ ")" : "");
+            return filename ~ (includePoint !is null ? " (included at " ~ includePoint.toString() ~ ")" : "");
+        }
+        
+        string toString()
+        {
+            return getFilename();
         }
 }
 

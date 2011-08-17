@@ -398,5 +398,5 @@ rom 0xFFFA:
     word: draw, main, scan
     
 rom bank 2, 0x0000:
-    embed '../../common/hello_tiles.chr'
-    embed '../../common/hello_tiles.chr' // Pad the other 4K with the same image.
+    embed '../../common/scroller_tiles.chr'
+    embed '../../common/scroller_tiles.chr' // Pad the other 4K with the same image.
