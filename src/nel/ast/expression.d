@@ -245,6 +245,8 @@ class AttributeExpression : Expression
                         foldedValue = 0xFACEBEEF;
                         folded = false;
                         break;
+                    default:
+                        error("unexpected compilation error: unknown DefinitionType", getPosition());
                 }
             }
             
@@ -319,6 +321,8 @@ class UnaryOperatorExpression : Expression
                 case UnaryOperatorType.LOGICAL_NOT:
                     foldedValue = foldedValue != 0 ? 0 : 1;
                     break;
+                default:
+                    error("unexpected compilation error: unknown UnaryOperatorType", getPosition());
             }
             return folded;
         }
@@ -336,6 +340,9 @@ class UnaryOperatorExpression : Expression
                     return ">" ~ op;
                 case UnaryOperatorType.LOGICAL_NOT:
                     return "!" ~ op;
+                default:
+                    error("unexpected compilation error: unknown UnaryOperatorType", getPosition());
+                    assert(0);
             }
         }
 }
@@ -539,6 +546,8 @@ class BinaryOperatorExpression : Expression
                         foldedValue = rs == 0 ? 0 : 1;
                     }
                     break;
+                default:
+                    error("unexpected compilation error: unknown BinaryOperatorType", getPosition());
             }
             return folded;
         }
@@ -585,6 +594,9 @@ class BinaryOperatorExpression : Expression
                     return ls ~ " && " ~ rs;
                 case BinaryOperatorType.LOGICAL_OR:
                     return ls ~ " || " ~ rs;
+                default:
+                    error("unexpected compilation error: unknown BinaryOperatorType", getPosition());
+                    assert(0);
             }
         }
 }

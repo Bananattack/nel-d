@@ -652,6 +652,8 @@ class InstructionCommand : Command
                         badReceiverError("must be the register 'p'.");
                     }
                     break;
+                default:
+                    error("unexected compilation error: unknown BuiltinInstruction", getPosition());
             }
             return size;
         }
@@ -692,6 +694,8 @@ class InstructionCommand : Command
                                 case ArgumentType.INDEXED_BY_Y:
                                     opcode = 0xB9; // lda mem, y
                                     break;
+                                default:
+                                    error("unexected compilation error: unknown ArgumentType", getPosition());
                             }
                             break;
                         case ArgumentType.X:
@@ -712,6 +716,8 @@ class InstructionCommand : Command
                                 case ArgumentType.INDEXED_BY_Y:
                                     opcode = arguments[0].isZeroPage() ? 0xB4 : 0xBE; // ldx mem, y
                                     break;
+                                default:
+                                    error("unexected compilation error: unknown ArgumentType", getPosition());
                             }
                             break;
                         case ArgumentType.Y:
@@ -729,6 +735,8 @@ class InstructionCommand : Command
                                 case ArgumentType.INDEXED_BY_X:
                                     opcode = arguments[0].isZeroPage() ? 0xB4 : 0xBC; // ldy mem, x
                                     break;
+                                default:
+                                    error("unexected compilation error: unknown ArgumentType", getPosition());
                             }
                             break;
                         case ArgumentType.S:
@@ -737,8 +745,12 @@ class InstructionCommand : Command
                                 case ArgumentType.X:
                                     opcode = 0x9A; // txs
                                     break;
+                                default:
+                                    error("unexected compilation error: unknown ArgumentType", getPosition());
                             }
                             break;
+                        default:
+                            error("unexected compilation error: unknown ArgumentType", getPosition());
                     }
                     break;
                 case BuiltinInstruction.PUT:
@@ -768,6 +780,8 @@ class InstructionCommand : Command
                                 case ArgumentType.INDEXED_BY_Y:
                                     opcode = 0x99; // sta mem, y
                                     break;
+                                default:
+                                    error("unexected compilation error: unknown ArgumentType", getPosition());
                             }
                             break;
                         case ArgumentType.X:
@@ -785,6 +799,8 @@ class InstructionCommand : Command
                                 case ArgumentType.DIRECT:
                                     opcode = arguments[0].isZeroPage() ? 0x86 : 0x8E; // stx mem
                                     break;
+                                default:
+                                    error("unexected compilation error: unknown ArgumentType", getPosition());
                             }
                             break;
                         case ArgumentType.Y:
@@ -799,6 +815,8 @@ class InstructionCommand : Command
                                 case ArgumentType.DIRECT:
                                     opcode = arguments[0].isZeroPage() ? 0x84 : 0x8C; // sty mem
                                     break;
+                                default:
+                                    error("unexected compilation error: unknown ArgumentType", getPosition());
                             }
                             break;
                         case ArgumentType.S:
@@ -807,8 +825,12 @@ class InstructionCommand : Command
                                 case ArgumentType.X:
                                     opcode = 0xBA; // tsx
                                     break;
+                                default:
+                                    error("unexected compilation error: unknown ArgumentType", getPosition());
                             }
                             break;
+                        default:
+                            error("unexected compilation error: unknown ArgumentType", getPosition());
                     }
                     break;
                 case BuiltinInstruction.CMP:
@@ -835,6 +857,8 @@ class InstructionCommand : Command
                                 case ArgumentType.INDEXED_BY_Y:
                                     opcode = 0xD1; // cmp mem, y
                                     break;
+                                default:
+                                    error("unexected compilation error: unknown ArgumentType", getPosition());
                             }
                             break;
                         case ArgumentType.X:
@@ -846,6 +870,8 @@ class InstructionCommand : Command
                                 case ArgumentType.DIRECT:
                                     opcode = arguments[0].isZeroPage() ? 0xE4 : 0xEC; // cpx mem
                                     break;
+                                default:
+                                    error("unexected compilation error: unknown ArgumentType", getPosition());
                             }
                             break;
                         case ArgumentType.Y:
@@ -857,8 +883,12 @@ class InstructionCommand : Command
                                 case ArgumentType.DIRECT:
                                     opcode = arguments[0].isZeroPage() ? 0xC4 : 0xCC; // cpy mem
                                     break;
+                                default:
+                                    error("unexected compilation error: unknown ArgumentType", getPosition());
                             }
                             break;
+                        default:
+                            error("unexected compilation error: unknown ArgumentType", getPosition());
                     }
                     break;
                 case BuiltinInstruction.ADD:
@@ -885,6 +915,8 @@ class InstructionCommand : Command
                         case ArgumentType.INDEXED_BY_Y:
                             opcode = 0x79; // adc mem, y
                             break;
+                        default:
+                            error("unexected compilation error: unknown ArgumentType", getPosition());
                     }
                     break;
                 case BuiltinInstruction.SUB:
@@ -911,6 +943,8 @@ class InstructionCommand : Command
                         case ArgumentType.INDEXED_BY_Y:
                             opcode = 0xF9; // sbc mem, y
                             break;
+                        default:
+                            error("unexected compilation error: unknown ArgumentType", getPosition());
                     }
                     break;
                 case BuiltinInstruction.OR:
@@ -934,6 +968,8 @@ class InstructionCommand : Command
                         case ArgumentType.INDEXED_BY_Y:
                             opcode = 0x19; // ora mem, y
                             break;
+                        default:
+                            error("unexected compilation error: unknown ArgumentType", getPosition());
                     }
                     break;
                 case BuiltinInstruction.AND:
@@ -957,6 +993,8 @@ class InstructionCommand : Command
                         case ArgumentType.INDEXED_BY_Y:
                             opcode = 0x39; // and mem, y
                             break;
+                        default:
+                            error("unexected compilation error: unknown ArgumentType", getPosition());
                     }
                     break;
                 case BuiltinInstruction.XOR:
@@ -980,6 +1018,8 @@ class InstructionCommand : Command
                         case ArgumentType.INDEXED_BY_Y:
                             opcode = 0x59; // eor mem, y
                             break;
+                        default:
+                            error("unexected compilation error: unknown ArgumentType", getPosition());
                     }
                     break;
                 case BuiltinInstruction.BIT:
@@ -988,6 +1028,8 @@ class InstructionCommand : Command
                         case ArgumentType.DIRECT:
                             opcode = arguments[0].isZeroPage() ? 0x24 : 0x2C; // bit mem
                             break;
+                        default:
+                            error("unexected compilation error: unknown ArgumentType", getPosition());
                     }
                     break;
                 case BuiltinInstruction.INC:
@@ -1005,6 +1047,8 @@ class InstructionCommand : Command
                         case ArgumentType.INDEXED_BY_X:
                             opcode = receiver.isZeroPage() ? 0xF6 : 0xFE; // inc mem, x
                             break;
+                        default:
+                            error("unexected compilation error: unknown ArgumentType", getPosition());
                     }
                     break;
                 case BuiltinInstruction.DEC:
@@ -1022,6 +1066,8 @@ class InstructionCommand : Command
                         case ArgumentType.INDEXED_BY_X:
                             opcode = receiver.isZeroPage() ? 0xD6 : 0xDE; // dec mem, x
                             break;
+                        default:
+                            error("unexected compilation error: unknown ArgumentType", getPosition());
                     }
                     break;
                 case BuiltinInstruction.SHL:
@@ -1036,6 +1082,8 @@ class InstructionCommand : Command
                         case ArgumentType.INDEXED_BY_X:
                             opcode = receiver.isZeroPage() ? 0x16 : 0x1E; // asl mem, x
                             break;
+                        default:
+                            error("unexected compilation error: unknown ArgumentType", getPosition());
                     }
                     break;
                 case BuiltinInstruction.SHR:
@@ -1050,6 +1098,8 @@ class InstructionCommand : Command
                         case ArgumentType.INDEXED_BY_X:
                             opcode = receiver.isZeroPage() ? 0x56 : 0x5E; // lsr mem, x
                             break;
+                        default:
+                            error("unexected compilation error: unknown ArgumentType", getPosition());
                     }
                     break;
                 case BuiltinInstruction.ROL:
@@ -1064,6 +1114,8 @@ class InstructionCommand : Command
                         case ArgumentType.INDEXED_BY_X:
                             opcode = receiver.isZeroPage() ? 0x36 : 0x3E; // rol mem, x
                             break;
+                        default:
+                            error("unexected compilation error: unknown ArgumentType", getPosition());
                     }
                     break;
                 case BuiltinInstruction.ROR:
@@ -1078,6 +1130,8 @@ class InstructionCommand : Command
                         case ArgumentType.INDEXED_BY_X:
                             opcode = receiver.isZeroPage() ? 0x76 : 0x7E; // ror mem, x
                             break;
+                        default:
+                            error("unexected compilation error: unknown ArgumentType", getPosition());
                     }
                     break;
                 case BuiltinInstruction.PUSH:
@@ -1089,6 +1143,8 @@ class InstructionCommand : Command
                         case ArgumentType.P:
                             opcode = 0x08; // php
                             break;
+                        default:
+                            error("unexected compilation error: unknown ArgumentType", getPosition());
                     }
                     break;
                 case BuiltinInstruction.PULL:
@@ -1100,6 +1156,8 @@ class InstructionCommand : Command
                         case ArgumentType.P:
                             opcode = 0x28; // plp
                             break;
+                        default:
+                            error("unexected compilation error: unknown ArgumentType", getPosition());
                     }
                     break;
                 case BuiltinInstruction.SET:
@@ -1114,6 +1172,8 @@ class InstructionCommand : Command
                         case ArgumentType.DECIMAL:
                             opcode = 0xF8; // sed
                             break;
+                        default:
+                            error("unexected compilation error: unknown ArgumentType", getPosition());
                     }
                     break;
                 case BuiltinInstruction.UNSET:
@@ -1131,6 +1191,8 @@ class InstructionCommand : Command
                         case ArgumentType.OVERFLOW:
                             opcode = 0xB8; // clv
                             break;
+                        default:
+                            error("unexected compilation error: unknown ArgumentType", getPosition());
                     }
                     break;
                 case BuiltinInstruction.NOT:
@@ -1146,6 +1208,8 @@ class InstructionCommand : Command
                     bank.writeByte(0x69, getPosition()); // adc #imm
                     bank.writeByte(0x01, getPosition()); // with imm = 0x01
                     break;
+                default:
+                    error("unknown instruction", getPosition());
             }
             
             if(defaultAssembly)
