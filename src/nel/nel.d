@@ -88,6 +88,7 @@ void main(string[] arguments)
         {
             switch(state)
             {
+                default:
                 case ArgumentState.INPUT:
                     
                     if(input != "")
