@@ -485,7 +485,7 @@ class Parser
                 }
                 break;
             default:
-                error("unexpected compilation error", scanner.getPosition());
+                error("unexpected compilation error: incorrectly classified token as relocation statement", scanner.getPosition());
         }
         
         consume(Token.PUNC_COLON); // :
@@ -513,7 +513,7 @@ class Parser
                 Statement[] statements = handleStatementList(); // statement list (which also handles the 'end')
                 return new BlockStatement(BlockType.SCOPE, name, statements, position);
             default:
-                error("unexpected compilation error", scanner.getPosition());
+                error("unexpected compilation error: incorrectly classified token as start of block statement", scanner.getPosition());
                 assert(0);
         }
     }
