@@ -84,6 +84,8 @@ class BranchStatement : Statement
                     // Absolute 16-bit location.
                     size = 3;
                     break;
+                default:
+                    error("Branch type must be one of 'nop', 'return', 'resume', 'goto', or 'call'", getPosition());
             }
             
             // Reserve the bytes needed for this data.
@@ -157,6 +159,8 @@ class BranchStatement : Statement
                             case ArgumentType.INDIRECT:
                                 opcode = 0x6C; // jmp [indirect]
                                 break;
+                            default:
+                                error("unconditional goto must be either direct or indirect", getPosition());
                         }
                         
                         bank.writeByte(opcode, getPosition());
@@ -171,6 +175,8 @@ class BranchStatement : Statement
                     bank.writeByte(0x20, getPosition()); // jsr label
                     destination.write(bank);
                     break;
+                default:
+                    error("unknown branch type", getPosition());
             }
         }
 }
