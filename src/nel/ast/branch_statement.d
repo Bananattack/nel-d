@@ -85,7 +85,7 @@ class BranchStatement : Statement
                     size = 3;
                     break;
                 default:
-                    error("Branch type must be one of 'nop', 'return', 'resume', 'goto', or 'call'", getPosition());
+                    error("unexected compilation error: unknown BranchType", getPosition());
             }
             
             // Reserve the bytes needed for this data.
@@ -176,7 +176,7 @@ class BranchStatement : Statement
                     destination.write(bank);
                     break;
                 default:
-                    error("unknown branch type", getPosition());
+                    error("unexected compilation error: unknown BranchType", getPosition());
             }
         }
 }
