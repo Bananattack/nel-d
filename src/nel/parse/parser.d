@@ -484,6 +484,8 @@ class Parser
                     statement = new RelocationStatement(RelocationType.RAM, location, position);
                 }
                 break;
+            default:
+                error("unexpected compilation error", scanner.getPosition());
         }
         
         consume(Token.PUNC_COLON); // :
@@ -510,6 +512,9 @@ class Parser
                 nextToken(); // IDENTIFIER
                 Statement[] statements = handleStatementList(); // statement list (which also handles the 'end')
                 return new BlockStatement(BlockType.SCOPE, name, statements, position);
+            default:
+                error("unexpected compilation error", scanner.getPosition());
+                assert(0);
         }
     }
     
@@ -773,6 +778,8 @@ class Parser
             case Keyword.WORD:
                 storage = StorageType.WORD;
                 break;
+            default:
+                error("data statements must be either byte or word", scanner.getPosition());
         }
         nextToken(); // IDENTIFIER (keyword 'byte'/'word')
         consume(Token.PUNC_COLON);
@@ -856,6 +863,9 @@ class Parser
             case Keyword.NOP:
                 nextToken(); // IDENTIFIER (keyword 'nop')
                 return new BranchStatement(BranchType.NOP, position);
+            default:
+                error("unexpected compilation error", scanner.getPosition());
+                assert(0);
         }
     }
     
@@ -971,6 +981,8 @@ class Parser
                 case Token.BINARY:
                     expression = handleExpr(); // expr
                     break;
+                default:
+                    error("unexpected token " ~ getVerboseTokenName(token, text), scanner.getPosition());
             }
             
             if(keyword != Keyword.THEN)
@@ -1111,6 +1123,9 @@ class Parser
             case Token.BINARY:
                 dangler = handleExpr(); // expr
                 break;
+            default:
+                error("unexpected token " ~ getVerboseTokenName(token, text), scanner.getPosition());
+
         }
         
         Command[] commands;

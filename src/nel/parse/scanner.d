@@ -392,6 +392,9 @@ class Scanner
                                 return Token.OP_OR;
                             }
                             break;
+                        default:
+                            error("unexpected compilation error", sourcePosition);
+
                     }
                     // If we didn't return yet, increment position.
                     // This has the effect of letting delimiter characters be read twice
