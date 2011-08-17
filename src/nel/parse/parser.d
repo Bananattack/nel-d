@@ -161,7 +161,7 @@ class Parser
                 else
                 {
                     // Pop previous scanner off stack.
-                    ulong top = includeStack.length - 1;
+                    uint top = includeStack.length - 1;
                     scanner = includeStack[top];
                     includeStack.length = top;
                     // Ready a new token for the scanner.
