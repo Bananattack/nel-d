@@ -1,4 +1,4 @@
-module nel.ast.node;
+module nel.ast.enum_declaration;
 
 // Copyright (C) 2011 by Andrew G. Crowell
 //
@@ -21,21 +21,46 @@ module nel.ast.node;
 // THE SOFTWARE.
 
 import nel.report;
+import nel.ast.statement;
+import nel.ast.definition;
+import nel.ast.expression;
+import nel.ast.storage_type;
+import nel.ast.symbol_table;
+import nel.ast.constant_declaration;
 
-class Node
+class EnumDeclaration : Statement
 {
     private:
-        SourcePosition position;
+        ConstantDeclaration[] constants;
         
     public:
-        this(SourcePosition position)
+        this(ConstantDeclaration[] constants, SourcePosition position)
         {
-            // Make a copy of that position, so it doesn't get modified by any outside code.
-            this.position = new SourcePosition(position);
+            super(StatementType.ENUM, position);
+            this.constants = constants;
         }
         
-        SourcePosition getPosition()
+        void aggregate()
         {
-            return position;
+            foreach(i, constant; constants)
+            {
+                constant.aggregate();
+            }
+        }
+        
+        void validate()
+        {
+            foreach(i, constant; constants)
+            {
+                constant.validate();
+            }
+        }
+        
+        void generate()
+        {
+            foreach(i, constant; constants)
+            {
+                constant.generate();
+            }
         }
 }
