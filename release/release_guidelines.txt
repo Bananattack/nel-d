@@ -6,7 +6,7 @@ These are a few notes of what should probably go into a precompiled release:
 * nel executable in the base folder.
 * release/readme.txt as readme.txt in the base folder.
 * tools/ folder.
-* tests/ folder.
+* tests/ folder, with prebuilt .nes files, excepting language grammar tests.
 
 Oh yeah, release/readme.txt and readme.md have different purposes:
 
