@@ -86,7 +86,7 @@ class BranchStatement : Statement
                     size = 3;
                     break;
                 default:
-                    error("unexected compilation error: unknown BranchType", getPosition());
+                    error("unexpected compilation error: unknown BranchType", getPosition());
             }
             
             // Reserve the bytes needed for this data.
@@ -177,7 +177,7 @@ class BranchStatement : Statement
                     destination.write(bank);
                     break;
                 default:
-                    error("unexected compilation error: unknown BranchType", getPosition());
+                    error("unexpected compilation error: unknown BranchType", getPosition());
             }
         }
 }
