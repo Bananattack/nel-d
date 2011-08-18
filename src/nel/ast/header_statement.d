@@ -41,8 +41,6 @@ class HeaderStatement : Statement
             this.segments = segments;
             
             recognizedSettings["mapper"] = true;
-            recognizedSettings["prg"] = true;
-            recognizedSettings["chr"] = true;
             recognizedSettings["mirroring"] = true;
             recognizedSettings["battery"] = true;
             recognizedSettings["fourscreen"] = true;
