@@ -24,8 +24,9 @@ static import std.file;
 static import std.stdio;
 
 import nel.report;
-import nel.ast.rom;
+import nel.ast.bank;
 import nel.ast.node;
+import nel.ast.program;
 import nel.ast.statement;
 
 class EmbedStatement : Statement
@@ -86,10 +87,10 @@ class EmbedStatement : Statement
             
             // Reserve the bytes needed for this data.
             // (Previous errors shouldn't wreck the size calculation).
-            RomBank bank = romGenerator.checkActiveBank("embed statement", getPosition());
+            Bank bank = program.checkActiveBank("embed statement", getPosition());
             if(bank !is null)
             {
-                bank.expand(size, getPosition());
+                bank.reserveRom(size, getPosition());
             }
         }
         
@@ -110,7 +111,7 @@ class EmbedStatement : Statement
                 return;
             }
             
-            RomBank bank = romGenerator.checkActiveBank("embed statement", getPosition());
+            Bank bank = program.checkActiveBank("embed statement", getPosition());
             if(bank !is null)
             {
                 for(uint i = 0; i < size; i++)

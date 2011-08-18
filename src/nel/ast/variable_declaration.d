@@ -21,7 +21,8 @@ module nel.ast.variable_declaration;
 // THE SOFTWARE.
 
 import nel.report;
-import nel.ast.rom;
+import nel.ast.bank;
+import nel.ast.program;
 import nel.ast.statement;
 import nel.ast.definition;
 import nel.ast.expression;
@@ -69,18 +70,14 @@ class VariableDeclaration : Statement
                 }
             }
             
-            if(!romGenerator.isRamCounterSet())
-            {
-                error("variable declaration was found before the ram location was set.", getPosition(), true);
-            }
-            
+            Bank bank = program.checkActiveBank("variable declaration", getPosition());
             foreach(i, name; names)
             {
                 // Insert symbol, using current RAM counter value as var offset.
-                getActiveTable().put(new VariableDefinition(name, this, romGenerator.getRamCounter(), getPosition()));
+                getActiveTable().put(new VariableDefinition(name, this, bank.getAbsolutePosition(), getPosition()));
                 
-                // Reserve size bytes in RAM counter to advance it forward.
-                romGenerator.expandRam(size, getPosition());
+                // Reserve size bytes in RAM for this variable.
+                bank.reserveRam(size, getPosition());
             }
         }
         

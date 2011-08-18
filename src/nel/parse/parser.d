@@ -27,6 +27,7 @@ static import std.string;
 static import std.algorithm;
 
 import nel.report;
+import nel.ast.bank;
 import nel.ast.builtin;
 import nel.ast.argument;
 import nel.ast.attribute;
@@ -39,6 +40,7 @@ import nel.ast.block_statement;
 import nel.ast.embed_statement;
 import nel.ast.while_statement;
 import nel.ast.branch_statement;
+import nel.ast.bank_declaration;
 import nel.ast.enum_declaration;
 import nel.ast.header_statement;
 import nel.ast.repeat_statement;
@@ -247,12 +249,13 @@ class Parser
                         return null;
                     case Keyword.EMBED:
                         return handleEmbedStatement();
-                    case Keyword.ROM:
-                    case Keyword.RAM:
+                    case Keyword.IN:
                         return handleRelocationStatement();
                     case Keyword.BEGIN:
                     case Keyword.PACKAGE:
                         return handleBlockStatement();
+                    case Keyword.BANK:
+                        return handleBankDeclaration();
                     case Keyword.DEF:
                         return handleLabelDeclaration();
                     case Keyword.LET:
@@ -433,63 +436,24 @@ class Parser
     RelocationStatement handleRelocationStatement()
     {
         SourcePosition position = new SourcePosition(scanner.getPosition());
-        RelocationStatement statement;
-        switch(keyword)
-        {
-            case Keyword.ROM:
-                nextToken(); // IDENTIFIER (keyword 'rom')
-                // rom bank expr
-                if(keyword == Keyword.BANK)
-                {
-                    nextToken(); // IDENTIFIER (keyword 'bank')
-                    Expression bank = handleExpr(); // expr
-                    Expression location;
-                    
-                    // (, expr)?
-                    if(token == Token.PUNC_COMMA)
-                    {
-                        nextToken(); // ,
-                        location = handleExpr(); // expr
-                    }
-                    statement = new RelocationStatement(bank, location, position);
-                }
-                // rom expr
-                else
-                {
-                    Expression location = handleExpr(); // expr
-                    statement = new RelocationStatement(RelocationType.ROM, location, position);
-                }
-                break;
-            case Keyword.RAM:
-                nextToken(); // IDENTIFIER (keyword 'ram')
-                
-                // rom doesn't have banks, read the input but raise an error.
-                if(keyword == Keyword.BANK)
-                {
-                    error("'ram' statement found with 'bank' keyword, but ram does not allow banking. did you mean to write 'rom'?", scanner.getPosition());
-                    
-                    nextToken(); // IDENTIFIER (keyword 'bank')
-                    handleExpr(); // expr
-                    
-                    // (, expr)?
-                    if(token == Token.PUNC_COMMA)
-                    {
-                        nextToken(); // ,
-                        handleExpr(); // expr
-                    }
-                }
-                else
-                {
-                    Expression location = handleExpr(); // expr
-                    statement = new RelocationStatement(RelocationType.RAM, location, position);
-                }
-                break;
-            default:
-                error("unexpected compilation error: incorrectly classified token as relocation statement", scanner.getPosition());
-        }
+        string name;
+        Expression location;
         
+        nextToken(); // IDENTIFIER (keyword 'in')
+        if(checkIdentifier())
+        {
+            name = text;
+        }
+        nextToken(); // IDENTIFIER
+        // (, expr)?
+        if(token == Token.PUNC_COMMA)
+        {
+            nextToken(); // ,
+            location = handleExpr(); // expr
+        }
         consume(Token.PUNC_COLON); // :
-        return statement;
+        
+        return new RelocationStatement(name, location, position);
     }
     
     BlockStatement handleBlockStatement()
@@ -516,6 +480,64 @@ class Parser
                 error("unexpected compilation error: incorrectly classified token as start of block statement", scanner.getPosition());
                 assert(0);
         }
+    }
+    
+    BankDeclaration handleBankDeclaration()
+    {
+        SourcePosition position = new SourcePosition(scanner.getPosition());
+        
+        string[] names;
+        BankType type;
+        Expression size;
+        
+        nextToken(); // IDENTIFIER (keyword 'bank')
+        
+        if(checkIdentifier())
+        {
+            names ~= text;
+        }
+        nextToken(); // IDENTIFIER
+        
+        // Check if we should match (',' id)*
+        bool more = token == Token.PUNC_COMMA;
+        while(more)
+        {
+            nextToken(); // ,
+            if(token == Token.IDENTIFIER)
+            {
+                if(checkIdentifier())
+                {
+                    // handle name
+                    names ~= text;
+                }
+                nextToken(); // IDENTIFIER
+                
+                // Check if we should match (',' id)*
+                more = token == Token.PUNC_COMMA;
+            }
+            else
+            {
+                error("expected identifier after ',' in bank declaration, but got " ~ getVerboseTokenName(token, text) ~ " instead", scanner.getPosition());
+                more = false;
+            }
+        }
+        
+        consume(Token.PUNC_COLON); // :
+        
+        if(checkIdentifier())
+        {
+            type = findBankType(text);
+            if(type == BankType.NONE)
+            {
+                error("invalid bank type '" ~ text ~ "'. only 'ram', 'prg' or 'chr' are allowed.", scanner.getPosition());
+            }
+        }
+        nextToken(); // IDENTIFIER (bank type)
+        consume(Token.PUNC_LBRACKET); // [
+        size = handleExpr(); // expr
+        consume(Token.PUNC_RBRACKET); // ]
+        
+        return new BankDeclaration(names, type, size, position);
     }
     
     LabelDeclaration handleLabelDeclaration()

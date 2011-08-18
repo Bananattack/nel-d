@@ -21,9 +21,10 @@ module nel.ast.command_statement;
 // THE SOFTWARE.
 
 import nel.report;
-import nel.ast.rom;
+import nel.ast.bank;
 import nel.ast.node;
 import nel.ast.builtin;
+import nel.ast.program;
 import nel.ast.argument;
 import nel.ast.statement;
 
@@ -57,7 +58,7 @@ class CommandStatement : Statement
         void validate()
         {
             // Reserve the bytes needed for this data.
-            RomBank bank = romGenerator.checkActiveBank("command statement", getPosition());
+            Bank bank = program.checkActiveBank("command statement", getPosition());
             if(bank is null)
             {
                 return;
@@ -67,7 +68,7 @@ class CommandStatement : Statement
             {
                 if(command !is null)
                 {
-                    bank.expand(command.calculateSize(), command.getPosition());
+                    bank.reserveRom(command.calculateSize(), command.getPosition());
                 }
             }
         }
@@ -75,7 +76,7 @@ class CommandStatement : Statement
         void generate()
         {
             // Reserve the bytes needed for this data.
-            RomBank bank = romGenerator.checkActiveBank("command statement", getPosition());
+            Bank bank = program.checkActiveBank("command statement", getPosition());
             if(bank is null)
             {
                 return;
@@ -124,7 +125,7 @@ abstract class Command : Node
         }
         
         abstract uint calculateSize();
-        abstract void write(RomBank bank);
+        abstract void write(Bank bank);
 }
 
 class InstructionCommand : Command
@@ -658,7 +659,7 @@ class InstructionCommand : Command
             return size;
         }
         
-        void write(RomBank bank)
+        void write(Bank bank)
         {
             bool defaultAssembly = true;
             uint opcode = 0;

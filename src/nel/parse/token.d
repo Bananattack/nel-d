@@ -129,9 +129,8 @@ enum Keyword
     RESUME,
     NOP,
     NOT,
-    ROM,
     BANK,
-    RAM,
+    IN,
     BYTE,
     WORD,
     BEGIN,
@@ -153,22 +152,6 @@ enum Keyword
 private Keyword[string] keywords;
 private string[Keyword] keywordNames;
 
-enum Builtin
-{
-    NONE,
-    A,
-    X,
-    Y,
-    S,
-    P,
-    ZERO,
-    NEGATIVE,
-    OVERFLOW,
-    CARRY,
-    DECIMAL,
-    INTERRUPT
-};
-
 static this()
 {
     keywords = [
@@ -183,9 +166,8 @@ static this()
         "resume": Keyword.RESUME,
         "nop": Keyword.NOP,
         "not": Keyword.NOT,
-        "rom": Keyword.ROM,
         "bank": Keyword.BANK,
-        "ram": Keyword.RAM,
+        "in": Keyword.IN,
         "byte": Keyword.BYTE,
         "word": Keyword.WORD,
         "begin": Keyword.BEGIN,

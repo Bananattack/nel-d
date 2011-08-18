@@ -21,8 +21,8 @@ module nel.ast.header_statement;
 // THE SOFTWARE.
 
 import nel.report;
-import nel.ast.rom;
 import nel.ast.node;
+import nel.ast.program;
 import nel.ast.statement;
 import nel.ast.expression;
 
@@ -66,14 +66,6 @@ class HeaderStatement : Statement
                             accepted[name] = segment.checkValue(0, 255);
                             assigned[name] = segment;
                             break;
-                        case "prg":
-                            accepted[name] = segment.checkValue(1, 255); // Need at least on PRG.
-                            assigned[name] = segment;
-                            break;
-                        case "chr":
-                            accepted[name] = segment.checkValue(0, 255); // Can have 0 CHR if this uses CHR RAM.
-                            assigned[name] = segment;
-                            break;
                         case "mirroring":
                             accepted[name] = segment.checkValue(0, 1);
                             assigned[name] = segment;
@@ -99,18 +91,14 @@ class HeaderStatement : Statement
             
             // Check all settings. Uses bitwise AND to ensure that all settings are met.
             bool valid = checkSetting("mapper")
-                & checkSetting("prg")
-                & checkSetting("chr")
                 & checkSetting("mirroring", false)
                 & checkSetting("battery", false)
                 & checkSetting("fourscreen", false);
                 
             if(valid)
             {
-                romGenerator = new RomGenerator(
+                program = new Program(
                     assigned["mapper"].getExpression().getFoldedValue(),
-                    assigned["prg"].getExpression().getFoldedValue(),
-                    assigned["chr"].getExpression().getFoldedValue(),
                     ("mirroring" in assigned) is null ? false : assigned["mirroring"].getExpression().getFoldedValue() != 0,
                     ("battery" in assigned) is null ? false : assigned["battery"].getExpression().getFoldedValue() != 0,
                     ("fourscreen" in assigned) is null ? false : assigned["fourscreen"].getExpression().getFoldedValue() != 0
