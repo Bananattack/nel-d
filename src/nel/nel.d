@@ -26,7 +26,7 @@ static import std.stdio;
 static import std.string;
 
 import nel.report;
-import nel.ast.rom;
+import nel.ast.program;
 import nel.ast.block_statement;
 import nel.parse.parser;
 import nel.parse.scanner;
@@ -157,11 +157,12 @@ void main(string[] arguments)
         handleErrors();
         
         log("Validation...");
+        program.resetPosition();
         block.validate();
         handleErrors();
         
         log("Generation...");
-        romGenerator.resetRomPosition();
+        program.resetPosition();
         block.generate();
         handleErrors();
         
@@ -169,7 +170,7 @@ void main(string[] arguments)
         {
             std.stdio.File file = std.stdio.File(output, "wb");
             log("Saving ROM...");
-            romGenerator.dumpRaw(file);
+            program.save(file);
             file.close();
         }
         catch(Exception e)

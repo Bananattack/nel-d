@@ -21,7 +21,8 @@ module nel.ast.label_declaration;
 // THE SOFTWARE.
 
 import nel.report;
-import nel.ast.rom;
+import nel.ast.bank;
+import nel.ast.program;
 import nel.ast.statement;
 import nel.ast.definition;
 import nel.ast.symbol_table;
@@ -48,7 +49,7 @@ class LabelDeclaration : Statement
         
         void validate()
         {
-            RomBank bank = romGenerator.getActiveBank();
+            Bank bank = program.getActiveBank();
             if(bank is null)
             {
                 error("label declaration found, but a rom bank hasn't been selected yet.", getPosition(), true);
@@ -57,7 +58,7 @@ class LabelDeclaration : Statement
             {
                 if(bank.hasOrigin())
                 {
-                    definition.setOffset(bank.getProgramCounter());
+                    definition.setOffset(bank.getAbsolutePosition());
                 }
                 else
                 {

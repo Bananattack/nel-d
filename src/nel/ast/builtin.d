@@ -20,6 +20,7 @@ module nel.ast.builtin;
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
 
+import nel.ast.bank;
 import nel.ast.argument;
 
 enum BuiltinInstruction
@@ -55,6 +56,7 @@ enum BuiltinInstruction
 
 private ArgumentType[string] registers;
 private ArgumentType[string] flags;
+private BankType[string] bankTypes;
 private BuiltinInstruction[string] instructions;
 private string[BuiltinInstruction] instructionNames;
 
@@ -75,6 +77,12 @@ static this()
         "carry": ArgumentType.CARRY,
         "decimal": ArgumentType.DECIMAL,
         "interrupt": ArgumentType.INTERRUPT
+    ];
+    
+    bankTypes = [
+        "ram": BankType.RAM,
+        "prg": BankType.PRG,
+        "chr": BankType.CHR,
     ];
     
     instructions = [
@@ -120,6 +128,12 @@ ArgumentType findBuiltinFlag(string text)
 {
     ArgumentType* match = text in flags;
     return match is null ? ArgumentType.NONE : *match;
+}
+
+BankType findBankType(string text)
+{
+    BankType* match = text in bankTypes;
+    return match is null ? BankType.NONE : *match;
 }
 
 BuiltinInstruction findBuiltinInstruction(string text)

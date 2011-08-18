@@ -1,4 +1,4 @@
-module nel.ast.relocation_statement;
+module nel.ast.bank_declaration;
 
 // Copyright (C) 2011 by Andrew G. Crowell
 //
@@ -20,9 +20,6 @@ module nel.ast.relocation_statement;
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
 
-static import std.stdio;
-static import std.string;
-
 import nel.report;
 import nel.ast.bank;
 import nel.ast.node;
@@ -30,53 +27,45 @@ import nel.ast.program;
 import nel.ast.statement;
 import nel.ast.expression;
 
-class RelocationStatement : Statement
+class BankDeclaration : Statement
 {
     private:
-        string bank;
-        Expression location;
+        string[] names;
+        BankType bankType;
+        Expression bankSize;
         
     public:
-        this(string bank, Expression location, SourcePosition position)
+        this(string[] names, BankType bankType, Expression bankSize, SourcePosition position)
         {
-            super(StatementType.RELOCATION, position);
-            this.bank = bank;
-            this.location = location;
+            super(StatementType.BANK, position);
+            this.names = names;
+            this.bankType = bankType;
+            this.bankSize = bankSize;
         }
         
         void aggregate()
         {
-            program.switchBank(bank, getPosition());
-            if(location !is null)
+            uint size = 0;
+            if(bankSize.fold(true, false))
             {
-                Bank bank = program.getActiveBank();
-
-                if(location.fold(true, false))
-                {
-                    bank.setAbsolutePosition(location.getFoldedValue(), getPosition());
-                }
-                else
-                {
-                    error("could not resolve the destination address provided to 'in' statement.", getPosition(), true);
-                }
+                size = bankSize.getFoldedValue();
+            }
+            else
+            {
+                error("could not resolve the size provided to this bank declaration.", getPosition(), true);
+            }
+            
+            foreach(i, name; names)
+            {
+                program.defineBank(bankType, name, size, getPosition());
             }
         }
         
         void validate()
         {
-            program.switchBank(bank, getPosition());
-            if(location !is null)
-            {
-                program.getActiveBank().setAbsolutePosition(location.getFoldedValue(), getPosition());
-            }
         }
         
         void generate()
         {
-            program.switchBank(bank, getPosition());
-            if(location !is null)
-            {
-                program.getActiveBank().setAbsolutePosition(location.getFoldedValue(), getPosition());
-            }
         }
 }

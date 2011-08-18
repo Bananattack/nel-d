@@ -27,7 +27,8 @@ enum StatementType
 {
     BLOCK,                  // A compound block statement, used for scoping. 
     HEADER,                 // A header statement. 
-    RELOCATION,             // A relocation statement, used to move the ROM and RAM positions. 
+    RELOCATION,             // A relocation statement, used to switch between banks.
+    BANK,                   // A bank declaration.
     LABEL,                  // A label declaration. 
     CONSTANT,               // A constant declaration. 
     VARIABLE,               // A variable declaration. 

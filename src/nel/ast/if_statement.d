@@ -21,8 +21,8 @@ module nel.ast.if_statement;
 // THE SOFTWARE.
 
 import nel.report;
-import nel.ast.rom;
 import nel.ast.node;
+import nel.ast.program;
 import nel.ast.argument;
 import nel.ast.attribute;
 import nel.ast.statement;

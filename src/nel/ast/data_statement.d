@@ -21,8 +21,9 @@ module nel.ast.data_statement;
 // THE SOFTWARE.
 
 import nel.report;
-import nel.ast.rom;
+import nel.ast.bank;
 import nel.ast.node;
+import nel.ast.program;
 import nel.ast.statement;
 import nel.ast.expression;
 import nel.ast.storage_type;
@@ -72,16 +73,16 @@ class DataStatement : Statement
             }
             
             // Reserve the bytes needed for this data.
-            RomBank bank = romGenerator.checkActiveBank("data statement", getPosition());
+            Bank bank = program.checkActiveBank("data statement", getPosition());
             if(bank !is null)
             {
-                bank.expand(size, getPosition());
+                bank.reserveRom(size, getPosition());
             }
         }
         
         void generate()
         {   
-            RomBank bank = romGenerator.checkActiveBank("data statement", getPosition());
+            Bank bank = program.checkActiveBank("data statement", getPosition());
             if(bank !is null)
             {
                 foreach(i, item; items)
@@ -110,7 +111,7 @@ class DataItem : Node
         }
         
         abstract ulong calculateSize();
-        abstract void write(RomBank bank, StorageType storageType);
+        abstract void write(Bank bank, StorageType storageType);
 }
 
 class NumericDataItem : DataItem
@@ -131,7 +132,7 @@ class NumericDataItem : DataItem
             return 1;
         }
         
-        void write(RomBank bank, StorageType storageType)
+        void write(Bank bank, StorageType storageType)
         {
             if(!expression.fold(true, true))
             {
@@ -166,7 +167,7 @@ class StringDataItem : DataItem
             return value.length;
         }
         
-        void write(RomBank bank, StorageType storageType)
+        void write(Bank bank, StorageType storageType)
         {
             if(storageType == StorageType.WORD)
             {

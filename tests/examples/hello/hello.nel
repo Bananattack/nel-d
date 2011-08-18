@@ -1,12 +1,17 @@
-ines:
-    mapper = 0,
-    prg = 1,
-    chr = 1
+ines: mapper = 0
+    
+let K = 1024
+bank ram : ram[2 * K]
+bank chr : chr[4 * K]
+bank prg : prg[16 * K]
 
-ram 0x00:
+in ram, 0x00:
     var t0, t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15: byte
     
-rom bank 0, 0xC000:
+in chr, 0x0000:
+    embed '../../common/hello_tiles.chr'
+
+in prg, 0xC000:
     include '../../common/hardware.nel'
 
     def load_palette: begin
@@ -81,7 +86,7 @@ rom bank 0, 0xC000:
         resume        
     end
 
-rom bank 1, 0xE000:
+in prg, 0xE000:
     def message:
         // A null-terminated message.
         byte: "HELLO  WORLD", 0
@@ -100,9 +105,5 @@ rom bank 1, 0xE000:
             0x0F, 0x00, 0x10, 0x30,
             0x0F, 0x00, 0x10, 0x30
 
-rom 0xFFFA:
+in prg, 0xFFFA:
     word: draw, main, scan
-    
-rom bank 2, 0x0000:
-    embed '../../common/hello_tiles.chr'
-    embed '../../common/hello_tiles.chr' // Pad the other 4K with the same image.

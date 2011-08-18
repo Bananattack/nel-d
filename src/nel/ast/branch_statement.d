@@ -21,8 +21,9 @@ module nel.ast.branch_statement;
 // THE SOFTWARE.
 
 import nel.report;
-import nel.ast.rom;
+import nel.ast.bank;
 import nel.ast.node;
+import nel.ast.program;
 import nel.ast.argument;
 import nel.ast.statement;
 
@@ -89,17 +90,17 @@ class BranchStatement : Statement
             }
             
             // Reserve the bytes needed for this data.
-            RomBank bank = romGenerator.checkActiveBank("branch statement", getPosition());
+            Bank bank = program.checkActiveBank("branch statement", getPosition());
             if(bank !is null)
             {
-                bank.expand(size, getPosition());
+                bank.reserveRom(size, getPosition());
             }
         }
         
         void generate()
         {
             // Get the bank to use for writing.
-            RomBank bank = romGenerator.checkActiveBank("branch statement", getPosition());
+            Bank bank = program.checkActiveBank("branch statement", getPosition());
             if(bank is null)
             {
                 return;

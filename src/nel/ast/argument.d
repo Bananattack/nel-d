@@ -23,9 +23,10 @@ module nel.ast.argument;
 static import std.string;
 
 import nel.report;
-import nel.ast.builtin;
-import nel.ast.rom;
+import nel.ast.bank;
 import nel.ast.node;
+import nel.ast.builtin;
+import nel.ast.program;
 import nel.ast.expression;
 
 enum ArgumentType
@@ -143,7 +144,7 @@ class Argument : Node
             zeroPage = true;
         }
         
-        void write(RomBank bank)
+        void write(Bank bank)
         {
             // Only write data if there is an expression.
             if(expression !is null)
@@ -167,7 +168,7 @@ class Argument : Node
             }
         }
         
-        void writeRelativeByte(RomBank bank)
+        void writeRelativeByte(Bank bank)
         {
             // Only write data if there is an expression.
             if(expression)
@@ -175,7 +176,7 @@ class Argument : Node
                 if(expression.fold(true, true))
                 {
                     // offset is the amount to add to the PC to reach the destination location.
-                    int offset = cast(int) expression.getFoldedValue() - cast(int) (bank.getProgramCounter() + 1);
+                    int offset = cast(int) expression.getFoldedValue() - cast(int) (bank.getAbsolutePosition() + 1);
                     ubyte ofs = cast(ubyte) offset;
                     
                     if(offset >= -128 && offset <= 127)
@@ -189,7 +190,7 @@ class Argument : Node
                                 "relative jump is outside of range -128..127 bytes. "
                                 ~ "rewrite the branch or shorten the gaps in your code. "
                                 ~ "(pc = %s, dest = %s, pc - dest = %s)",
-                                bank.getProgramCounter(), expression.getFoldedValue(), offset
+                                bank.getAbsolutePosition(), expression.getFoldedValue(), offset
                             ), getPosition()
                         );
                     }
