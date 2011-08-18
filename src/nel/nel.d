@@ -32,7 +32,7 @@ import nel.parse.parser;
 import nel.parse.scanner;
 
 public immutable string PROGRAM_NAME = "nel";
-public immutable string VERSION_TEXT = "0.1.2 (alpha build)";
+public immutable string VERSION_TEXT = "0.2 (alpha build)";
 
 private enum ArgumentState
 {
