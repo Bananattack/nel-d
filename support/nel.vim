@@ -9,6 +9,7 @@ syntax match Number /\<\d\+\>/
 syntax match Number /\<0x\x\+\>/
 syntax match Number /\<0b[01]\+\>/
 syntax match String /"[^"]*"/hs=s+1,he=e-1
+syntax match String /'[^']*'/hs=s+1,he=e-1
 syntax keyword Statement var let def begin end return call
 syntax keyword Repeat while until do repeat
 syntax keyword Structure enum
