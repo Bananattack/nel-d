@@ -1,5 +1,5 @@
-** (This is old. Check out wiz instead <https://github.com/Bananattack/wiz>)**
-============================================================================
+** (This is old. Check out wiz instead <https://github.com/Bananattack/wiz>) **
+===============================================================================
 
 nel (D version)
 ===============
